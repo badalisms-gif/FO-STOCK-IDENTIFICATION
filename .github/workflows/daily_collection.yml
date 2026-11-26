@@ -25,8 +25,11 @@ jobs:
 
     steps:
 
-      - name: Checkout repository
+      - name: Checkout latest main branch
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -37,6 +40,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Synchronize latest repository
+        run: |
+          git fetch origin main
+          git checkout main
+          git merge --ff-only origin/main
 
       - name: Run daily collector
         id: collector
@@ -50,8 +59,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           if [ ! -d historical_data ]; then
-            echo "No historical data directory"
-            exit 0
+            echo "Historical data folder missing"
+            exit 1
           fi
 
           git add historical_data/
@@ -60,7 +69,6 @@ jobs:
             echo "No new historical data"
           else
             git commit -m "Automatic historical data collection"
-            git pull --rebase origin main
             git push origin HEAD:main
           fi
 
@@ -68,6 +76,8 @@ jobs:
         if: always()
         run: |
           if [ "${{ steps.collector.outcome }}" != "success" ]; then
-            echo "Collection incomplete. Check saved diagnostics."
+            echo "Collection incomplete. Check diagnostics."
             exit 1
           fi
+
+          echo "Collection completed successfully"
