@@ -1,17 +1,22 @@
 {
-  "version": "1.5.2",
-  "collection_time": "2026-11-26T20:51:12.156986+05:30",
+  "version": "1.5.3",
+  "collection_time": "2026-11-26T21:04:31.186512+05:30",
   "latest_expected_date": "2026-11-26",
+  "overall_status": "PARTIAL",
   "successful_sources": [
+    "fii_dii_unverified",
     "participant_oi"
   ],
   "missing_sources": [
     "fii_dii"
   ],
   "latest_missing_sources": [
-    "participant_oi",
-    "fii_dii"
+    "fii_dii",
+    "participant_oi"
   ],
+  "participant_oi_latest_available": false,
+  "combined_cash_verified": false,
+  "unverified_cash_available": true,
   "failed_attempts": 4,
   "results": [
     {
@@ -33,7 +38,7 @@
       "status": "SAVED",
       "records": 4,
       "actual_date": "2026-11-23",
-      "sha256": "c5f310e6e00b89afe98e4612b0a5f3b1426d0c1d82d69a54a0f11285bcfff6e6",
+      "sha256": "a1c36fc12f50a8540fb818bbaa88c79cf746fd1a8f29832cc748a3c4507e6cab",
       "error": ""
     },
     {
@@ -48,7 +53,17 @@
       "status": "FAILED",
       "records": null,
       "requested_date": "2026-11-26",
-      "error": "Official combined cash report unavailable: https://www.nseindia.in/reports/fii-dii: Combined cash tables not found | https://nseindia.in/reports/fii-dii: Combined cash tables not found | https://www.nseindia.com/reports/fii-dii: Combined cash tables not found | https://beta.msei.in/downloads/equity-reports/fii-dii-activities: HTTPSConnectionPool(host='beta.msei.in', port=443): Max retries exceeded with url: /downloads/equity-reports/fii-dii-activities (Caused by ConnectTimeoutError(<HTTPSConnection(host='beta.msei.in', port=443) at 0x75b131f59b50>, 'Connection to beta.msei.in timed out. (connect timeout=10)')) | https://beta.mseindia.com/markets/markets-information/fii-dii-trading-activities: HTTPSConnectionPool(host='beta.mseindia.com', port=443): Max retries exceeded with url: /markets/markets-information/fii-dii-trading-activities (Caused by ConnectTimeoutError(<HTTPSConnection(host='beta.mseindia.com', port=443) at 0x75b131f52590>, 'Connection to beta.mseindia.com timed out. (connect timeout=10)')) | https://www.nseindia.com/api/fiidiiTradeReact: valid data but exchange scope unverified | https://www.nseindia.in/api/fiidiiTradeReact: valid data but exchange scope unverified"
+      "error": "Combined cash scope not verified: https://www.nseindia.in/reports/fii-dii: Unambiguous combined cash table not found | https://www.nseindia.com/reports/fii-dii: Unambiguous combined cash table not found"
+    },
+    {
+      "source": "fii_dii_unverified",
+      "status": "SAVED",
+      "records": 2,
+      "actual_date": "2026-11-26",
+      "sha256": "780452be37f7d2ba77957a78577757f93acad0f76fc711963a1c829b8bd5b45d",
+      "error": "",
+      "scope_verified": false,
+      "eligible_for_analysis": false
     }
   ]
 }

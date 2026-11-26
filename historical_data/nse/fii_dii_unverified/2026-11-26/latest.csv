@@ -1,0 +1,3 @@
+Report Date,Category,Buy Cr,Sell Cr,Net Cr,Market Scope,Numeric Validation,Date Validation,Scope Verified,Validation Status,Eligible For Analysis,Source URL,Matching API Hosts
+2026-11-26,DII,24352.87,18722.15,5630.72,UNVERIFIED_EXCHANGE_SCOPE,True,True,False,SCOPE_UNVERIFIED,False,https://www.nseindia.com/api/fiidiiTradeReact,2
+2026-11-26,FII/FPI,17879.74,12036.41,5843.33,UNVERIFIED_EXCHANGE_SCOPE,True,True,False,SCOPE_UNVERIFIED,False,https://www.nseindia.com/api/fiidiiTradeReact,2
