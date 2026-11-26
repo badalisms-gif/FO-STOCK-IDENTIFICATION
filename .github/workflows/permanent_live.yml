@@ -1,0 +1,74 @@
+
+name: Permanent Live Market Collector V2.6
+
+on:
+  workflow_dispatch:
+    inputs:
+      window:
+        description: Collection window
+        required: true
+        default: AM
+        type: choice
+        options:
+          - AM
+          - PM
+
+  schedule:
+    - cron: '35 3 * * 1-5'
+    - cron: '50 6 * * 1-5'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: permanent-live-${{ github.event.schedule || inputs.window }}
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+
+      - name: Select collection window
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          MANUAL_WINDOW: ${{ inputs.window }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "COLLECTION_WINDOW=$MANUAL_WINDOW" >> "$GITHUB_ENV"
+          elif [ "$SCHEDULE" = "35 3 * * 1-5" ]; then
+            echo "COLLECTION_WINDOW=AM" >> "$GITHUB_ENV"
+          else
+            echo "COLLECTION_WINDOW=PM" >> "$GITHUB_ENV"
+          fi
+
+      - name: Collect and archive live market
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+          PYTHONUNBUFFERED: '1'
+        run: |
+          python permanent_live_collector.py
+
+      - name: Backup collection files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-market-${{ github.run_id }}-${{ github.run_attempt }}
+          path: historical_data/live_market/
+          retention-days: 30
+          if-no-files-found: ignore
