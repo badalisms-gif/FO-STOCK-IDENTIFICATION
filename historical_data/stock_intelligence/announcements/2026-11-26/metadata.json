@@ -1,0 +1,13 @@
+{
+  "version": "1.6.0",
+  "source": "announcements",
+  "report_date": "2026-11-26",
+  "records": 382,
+  "sha256": "d7ee55760905672b78012c2061b5ed045c3a77a5391f3345b79433edf78129ea",
+  "checked_at": "2026-11-26T21:38:51.876126+05:30",
+  "raw_records": 2382,
+  "rejected_records": 0,
+  "coverage_verified": false,
+  "lookback_start": "2026-11-19",
+  "lookback_end": "2026-11-26"
+}

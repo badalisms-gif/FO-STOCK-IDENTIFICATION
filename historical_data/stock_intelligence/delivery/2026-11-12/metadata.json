@@ -1,0 +1,12 @@
+{
+  "version": "1.6.0",
+  "source": "delivery",
+  "report_date": "2026-11-12",
+  "records": 218,
+  "sha256": "a515451b251102affe66c62b5a893331482493555294b62ac1e0755fb14caad6",
+  "checked_at": "2026-11-26T21:38:47.935659+05:30",
+  "universe_size": 218,
+  "covered_stocks": 218,
+  "eligible_stocks": 218,
+  "coverage_verified": true
+}

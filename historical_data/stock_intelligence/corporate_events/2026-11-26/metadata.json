@@ -1,0 +1,11 @@
+{
+  "version": "1.6.0",
+  "source": "corporate_events",
+  "report_date": "2026-11-26",
+  "records": 0,
+  "sha256": "039212a26ac6c4747ce69795debf787d4a72db56fc3d74580ce2984bfd2212e6",
+  "checked_at": "2026-11-26T21:38:52.179831+05:30",
+  "raw_records": 67,
+  "rejected_records": 0,
+  "coverage_verified": false
+}

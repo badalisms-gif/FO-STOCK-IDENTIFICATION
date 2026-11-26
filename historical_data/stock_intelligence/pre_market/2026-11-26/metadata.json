@@ -1,0 +1,11 @@
+{
+  "version": "1.6.0",
+  "source": "pre_market",
+  "report_date": "2026-11-26",
+  "records": 218,
+  "sha256": "81ef6719303548b7fde0a4ea41d182c0cd6de468979f29eddf51c7bbd044148f",
+  "checked_at": "2026-11-26T21:38:52.554452+05:30",
+  "raw_records": 218,
+  "rejected_records": 0,
+  "coverage_verified": false
+}

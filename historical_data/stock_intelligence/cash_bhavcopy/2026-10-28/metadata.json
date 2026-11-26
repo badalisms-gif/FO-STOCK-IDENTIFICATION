@@ -1,0 +1,12 @@
+{
+  "version": "1.6.0",
+  "source": "cash_bhavcopy",
+  "report_date": "2026-10-28",
+  "records": 218,
+  "sha256": "35a4e73557cb37924be00d94672ffe495c231b1f7ce4880e8d097c2043c80505",
+  "checked_at": "2026-11-26T21:38:50.238790+05:30",
+  "universe_size": 218,
+  "covered_stocks": 218,
+  "eligible_stocks": 218,
+  "coverage_verified": true
+}
