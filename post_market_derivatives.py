@@ -1,17 +1,21 @@
 
 """
-F&O POST MARKET DERIVATIVES
-Version 1.9.1
+F&O ADVANCED POST MARKET INTELLIGENCE
+Version 1.9.2
 
-Futures OI + Bulk Deals + Block Deals
-+ Short Selling Intelligence
+Corrected Futures Integration
+NSE Historical Fallback
+Bulk / Block / Short Selling
+Preliminary + Futures Confirmed Watchlist
 
 Research Only
+No Automatic Orders
 """
 
-import re
+import io
 import json
 import math
+import re
 import hashlib
 import pandas as pd
 import streamlit as st
@@ -20,30 +24,56 @@ from daily_collector import DATA
 
 from post_market_engine import (
     build_watchlist,
+    available_dates,
     number,
     now
 )
 
-VERSION = "1.9.1"
+from futures_intelligence_engine import (
+    fetch_futures,
+    analyse_futures
+)
 
-MIN_OI_CHANGE = 3.0
-MIN_FUTURES_MOVE = 0.50
-MAX_EARLY_MOVE = 3.0
+VERSION = "1.9.2"
 
 MIN_VOLUME_RATIO = 1.5
 MIN_TURNOVER_RATIO = 1.5
+MIN_DELIVERY_RATIO = 1.5
+
+MIN_PRICE_MOVE = 0.50
+MIN_RELATIVE_STRENGTH = 0.30
+
+MIN_FUTURES_MOVE = 0.50
+MIN_OI_CHANGE = 3.0
+
+MAX_EARLY_MOVE = 3.0
+
+FUTURES_COLUMNS = [
+
+    "Report Date",
+    "Symbol",
+    "Expiry",
+    "Close",
+    "OI",
+    "Volume"
+
+]
 
 
 # =====================================
-# SCHEMA UTILITIES
+# BASIC UTILITIES
 # =====================================
 
 def normalize(value):
 
     return re.sub(
+
         r"[^a-z0-9]",
+
         "",
+
         str(value).lower()
+
     )
 
 
@@ -81,7 +111,7 @@ def numeric(series):
     )
 
 
-def dates(series):
+def date_values(series):
 
     return pd.to_datetime(
 
@@ -96,132 +126,89 @@ def dates(series):
     ).dt.strftime("%Y-%m-%d")
 
 
-# =====================================
-# HISTORICAL SOURCE DISCOVERY
-# =====================================
+def finite(value):
 
-def discover_sources():
+    return number(value) is not None
 
-    result = {
 
-        "futures": [],
+def meets(value, threshold):
 
-        "bulk": [],
+    value = number(value)
 
-        "block": [],
+    return (
 
-        "short": []
+        value is not None
 
-    }
+        and value >= threshold
 
-    for path in DATA.rglob("latest.csv"):
-
-        parts = [
-
-            normalize(part)
-
-            for part in path.relative_to(DATA).parts[:-2]
-
-        ]
-
-        name = "/".join(parts)
-
-        if "revision" in name:
-
-            continue
-
-        if "watchlist" in name:
-
-            continue
-
-        if any(
-
-            word in name
-
-            for word in [
-
-                "participant",
-
-                "institutional",
-
-                "companynews",
-
-                "optionchain"
-
-            ]
-
-        ):
-
-            continue
-
-        if "bulk" in name:
-
-            result["bulk"].append(path)
-
-        elif "block" in name:
-
-            result["block"].append(path)
-
-        elif "shortselling" in name or "short" in parts:
-
-            result["short"].append(path)
-
-        elif any(
-
-            word in name
-
-            for word in [
-
-                "futures",
-
-                "fobhavcopy",
-
-                "derivativesbhavcopy"
-
-            ]
-
-        ):
-
-            result["futures"].append(path)
-
-    return result
+    )
 
 
 # =====================================
-# SNAPSHOT VALIDATION
+# VERIFIED LOCAL STORAGE
 # =====================================
 
-def read_verified(path):
+def read_verified(path, expected_date=None):
 
-    meta_path = path.parent / "metadata.json"
+    metadata_path = path.parent / "metadata.json"
 
-    if not meta_path.exists():
+    if not path.exists():
+
+        raise ValueError("Report missing")
+
+    if not metadata_path.exists():
 
         raise ValueError("Metadata missing")
 
-    meta = json.loads(
-        meta_path.read_text()
+    metadata = json.loads(
+
+        metadata_path.read_text()
+
     )
 
     content = path.read_bytes()
 
     digest = hashlib.sha256(
+
         content
+
     ).hexdigest()
 
-    if digest != meta.get("sha256"):
+    if digest != metadata.get("sha256"):
 
         raise ValueError("Checksum mismatch")
 
-    frame = pd.read_csv(path)
+    frame = pd.read_csv(
 
-    if len(frame) != meta.get("records"):
+        io.BytesIO(content)
+
+    )
+
+    if len(frame) != metadata.get("records"):
 
         raise ValueError("Record count mismatch")
 
     if frame.columns.duplicated().any():
 
         raise ValueError("Duplicate columns")
+
+    if expected_date:
+
+        stored_date = metadata.get(
+
+            "report_date"
+
+        )
+
+        if stored_date is not None:
+
+            if str(stored_date) != str(expected_date):
+
+                raise ValueError(
+
+                    "Metadata date mismatch"
+
+                )
 
     eligible = find_column(
 
@@ -237,16 +224,20 @@ def read_verified(path):
 
             frame[eligible]
             .astype(str)
-            .str.lower()
             .str.strip()
+            .str.lower()
             .eq("true")
 
         ].copy()
 
-    return frame, meta
+    return frame, metadata
 
 
-def dated_records(frame, day):
+# =====================================
+# REPORT DATE VALIDATION
+# =====================================
+
+def validate_date(frame, day):
 
     date_col = find_column(
 
@@ -270,92 +261,38 @@ def dated_records(frame, day):
 
     if date_col is None:
 
-        raise ValueError("Report date column missing")
+        raise ValueError(
 
-    if not dates(frame[date_col]).eq(day).all():
+            "Report date column missing"
 
-        raise ValueError("Report date mismatch")
+        )
+
+    if not date_values(
+
+        frame[date_col]
+
+    ).eq(str(day)).all():
+
+        raise ValueError(
+
+            "Report date mismatch"
+
+        )
 
     return frame
 
 
 # =====================================
-# FUTURES DATA NORMALIZATION
+# EXACT FUTURES SCHEMA
 # =====================================
 
-def normalize_futures(frame, day, universe):
+def validate_futures(frame, day, universe):
 
-    frame = dated_records(frame, day)
+    missing = set(
 
-    aliases = {
+        FUTURES_COLUMNS
 
-        "Symbol": [
-
-            "Symbol",
-
-            "Ticker Symbol",
-
-            "TCKRSYMB"
-
-        ],
-
-        "Expiry": [
-
-            "Expiry",
-
-            "Expiry Date",
-
-            "ExpiryDate",
-
-            "XPRYDT",
-
-            "FinInstrmActlXpryDt"
-
-        ],
-
-        "Close": [
-
-            "Close",
-
-            "Close Price",
-
-            "Closing Price",
-
-            "Futures Close",
-
-            "CLSPRIC"
-
-        ],
-
-        "OI": [
-
-            "Open Interest",
-
-            "OI",
-
-            "OPNINTRST"
-
-        ]
-
-    }
-
-    columns = {
-
-        name: find_column(frame, options)
-
-        for name, options in aliases.items()
-
-    }
-
-    missing = [
-
-        name
-
-        for name, column in columns.items()
-
-        if column is None
-
-    ]
+    ) - set(frame.columns)
 
     if missing:
 
@@ -363,149 +300,77 @@ def normalize_futures(frame, day, universe):
 
             "Missing futures columns: "
 
-            + ", ".join(missing)
+            + ", ".join(sorted(missing))
 
         )
 
-    instrument = find_column(
+    frame = frame[
 
-        frame,
-
-        [
-
-            "Instrument",
-
-            "Instrument Type",
-
-            "InstrumentType",
-
-            "FinInstrmTp"
-
-        ]
-
-    )
-
-    if instrument:
-
-        values = frame[instrument].map(normalize)
-
-        frame = frame[
-
-            values.isin([
-
-                "futstk",
-
-                "stf",
-
-                "fut",
-
-                "stockfuture",
-
-                "stockfutures"
-
-            ])
-
-        ].copy()
-
-    else:
-
-        option_side = find_column(
-
-            frame,
-
-            [
-
-                "Option Type",
-
-                "Option Side",
-
-                "OptnTp"
-
-            ]
-
-        )
-
-        if option_side:
-
-            frame = frame[
-
-                ~frame[option_side]
-                .astype(str)
-                .str.upper()
-                .isin(["CE", "PE"])
-
-            ].copy()
-
-        else:
-
-            raise ValueError(
-
-                "Futures instrument type unverified"
-
-            )
-
-    output = pd.DataFrame({
-
-        "Symbol":
-
-            frame[columns["Symbol"]]
-            .astype(str)
-            .str.strip()
-            .str.upper(),
-
-        "Expiry":
-
-            dates(frame[columns["Expiry"]]),
-
-        "Close":
-
-            numeric(frame[columns["Close"]]),
-
-        "OI":
-
-            numeric(frame[columns["OI"]])
-
-    })
-
-    output = output[
-
-        output["Symbol"].isin(universe)
-
-        &
-
-        output["Expiry"].notna()
-
-        &
-
-        output["Expiry"].ge(day)
-
-        &
-
-        output["Close"].map(
-
-            lambda x: number(x) is not None
-
-        )
-
-        &
-
-        output["OI"].map(
-
-            lambda x: number(x) is not None
-
-        )
-
-        &
-
-        output["Close"].gt(0)
-
-        &
-
-        output["OI"].ge(0)
+        FUTURES_COLUMNS
 
     ].copy()
 
-    if output.duplicated(
+    validate_date(frame, day)
+
+    frame["Symbol"] = (
+
+        frame["Symbol"]
+
+        .astype(str)
+
+        .str.strip()
+
+        .str.upper()
+
+    )
+
+    frame["Expiry"] = date_values(
+
+        frame["Expiry"]
+
+    )
+
+    if frame["Expiry"].isna().any():
+
+        raise ValueError(
+
+            "Invalid expiry date"
+
+        )
+
+    for column in [
+
+        "Close",
+
+        "OI",
+
+        "Volume"
+
+    ]:
+
+        frame[column] = numeric(
+
+            frame[column]
+
+        )
+
+        if not frame[column].map(finite).all():
+
+            raise ValueError(
+
+                f"Invalid {column}"
+
+            )
+
+        if frame[column].lt(0).any():
+
+            raise ValueError(
+
+                f"Negative {column}"
+
+            )
+
+    if frame.duplicated(
 
         ["Symbol", "Expiry"]
 
@@ -517,221 +382,388 @@ def normalize_futures(frame, day, universe):
 
         )
 
-    return output
+    frame = frame[
+
+        frame["Symbol"].isin(universe)
+
+        &
+
+        frame["Expiry"].ge(str(day))
+
+    ].copy()
+
+    if frame.empty:
+
+        raise ValueError(
+
+            "No eligible stock futures"
+
+        )
+
+    return frame
 
 
 # =====================================
-# FUTURES OI INTELLIGENCE
+# FUTURES REPORT WITH NSE FALLBACK
 # =====================================
 
-def futures_intelligence(paths, day, universe):
+@st.cache_data(ttl=600, show_spinner=False)
+def fetch_archive_futures(day):
 
-    diagnostics = []
+    report_date = pd.Timestamp(
 
-    reports = {}
+        day
 
-    for path in paths:
+    ).date()
 
-        report_date = path.parent.name
+    frame, url = fetch_futures(
 
-        if report_date > day:
-
-            continue
-
-        if report_date in reports:
-
-            continue
-
-        try:
-
-            frame, meta = read_verified(path)
-
-            output = normalize_futures(
-
-                frame,
-
-                report_date,
-
-                universe
-
-            )
-
-            if output.empty:
-
-                raise ValueError(
-
-                    "No valid futures contracts"
-
-                )
-
-            reports[report_date] = output
-
-        except Exception as error:
-
-            diagnostics.append({
-
-                "Source": "Futures",
-
-                "File": str(path),
-
-                "Status": "REJECTED",
-
-                "Reason": str(error)
-
-            })
-
-    if day not in reports:
-
-        return {}, diagnostics, "LATEST REPORT MISSING"
-
-    previous_dates = sorted(
-
-        [
-
-            value
-
-            for value in reports
-
-            if value < day
-
-        ],
-
-        reverse=True
+        report_date
 
     )
 
-    if not previous_dates:
+    return frame, url
 
-        return {}, diagnostics, "PREVIOUS REPORT MISSING"
 
-    previous_day = previous_dates[0]
+def load_futures(day, universe):
 
-    current = reports[day]
+    path = (
 
-    previous = reports[previous_day]
+        DATA
 
-    # Compare the same expiry contracts.
-    # Do not compare two different expiries.
+        / "nse"
 
-    nearest = current.sort_values(
+        / "futures"
 
-        ["Symbol", "Expiry"]
+        / str(day)
 
-    ).drop_duplicates("Symbol")
+        / "latest.csv"
 
-    merged = nearest.merge(
+    )
 
-        previous,
+    logs = []
 
-        on=["Symbol", "Expiry"],
+    try:
 
-        how="inner",
+        frame, metadata = read_verified(
 
-        suffixes=("", "_Previous")
+            path,
+
+            expected_date=day
+
+        )
+
+        if metadata.get("source") != "futures":
+
+            raise ValueError(
+
+                "Futures source mismatch"
+
+            )
+
+        frame = validate_futures(
+
+            frame,
+
+            day,
+
+            universe
+
+        )
+
+        logs.append({
+
+            "Source": "Futures",
+
+            "Report Date": str(day),
+
+            "Status": "LOCAL VERIFIED",
+
+            "Contracts": len(frame),
+
+            "Stocks": frame["Symbol"].nunique(),
+
+            "File": str(path)
+
+        })
+
+        return frame, logs
+
+    except Exception as error:
+
+        logs.append({
+
+            "Source": "Futures",
+
+            "Report Date": str(day),
+
+            "Status": "LOCAL UNAVAILABLE",
+
+            "Reason": str(error),
+
+            "File": str(path)
+
+        })
+
+    # Use existing NSE collector.
+    # No new API token required.
+
+    try:
+
+        frame, url = fetch_archive_futures(
+
+            str(day)
+
+        )
+
+        frame = validate_futures(
+
+            frame,
+
+            day,
+
+            universe
+
+        )
+
+        logs.append({
+
+            "Source": "Futures",
+
+            "Report Date": str(day),
+
+            "Status": "NSE FALLBACK RECEIVED",
+
+            "Contracts": len(frame),
+
+            "Stocks": frame["Symbol"].nunique(),
+
+            "URL": url
+
+        })
+
+        return frame, logs
+
+    except Exception as error:
+
+        logs.append({
+
+            "Source": "Futures",
+
+            "Report Date": str(day),
+
+            "Status": "NSE FALLBACK FAILED",
+
+            "Reason": str(error)
+
+        })
+
+    return pd.DataFrame(), logs
+
+
+# =====================================
+# PREVIOUS SESSION
+# =====================================
+
+def previous_session(day):
+
+    dates = [
+
+        value
+
+        for value in available_dates(
+
+            "cash_bhavcopy"
+
+        )
+
+        if value < str(day)
+
+    ]
+
+    if not dates:
+
+        return None
+
+    return max(dates)
+
+
+# =====================================
+# REUSE EXISTING FUTURES ANALYSIS
+# =====================================
+
+def futures_intelligence(day, universe):
+
+    diagnostics = []
+
+    previous_day = previous_session(day)
+
+    if previous_day is None:
+
+        return {}, diagnostics, {
+
+            "Status": "PREVIOUS SESSION UNKNOWN",
+
+            "Comparable Stocks": 0
+
+        }
+
+    current, logs = load_futures(
+
+        day,
+
+        universe
+
+    )
+
+    diagnostics.extend(logs)
+
+    previous, logs = load_futures(
+
+        previous_day,
+
+        universe
+
+    )
+
+    diagnostics.extend(logs)
+
+    if current.empty or previous.empty:
+
+        return {}, diagnostics, {
+
+            "Status": "REPORT UNAVAILABLE",
+
+            "Current Date": day,
+
+            "Previous Date": previous_day,
+
+            "Comparable Stocks": 0
+
+        }
+
+    # Existing collector analysis:
+    # Total OI across expiries.
+    # Same-expiry price comparison.
+    # Rollover review.
+
+    analysis = analyse_futures(
+
+        current,
+
+        previous
 
     )
 
     result = {}
 
-    for _, row in merged.iterrows():
+    for _, row in analysis.iterrows():
 
-        previous_oi = number(
+        name = row["Symbol"]
 
-            row["OI_Previous"]
+        price_change = number(
 
-        )
-
-        previous_close = number(
-
-            row["Close_Previous"]
+            row["Price Change %"]
 
         )
 
-        if previous_oi is None or previous_oi <= 0:
+        oi_change = number(
+
+            row["OI Change %"]
+
+        )
+
+        if price_change is None:
 
             continue
 
-        if previous_close is None or previous_close <= 0:
+        if oi_change is None:
 
             continue
 
-        oi_change = (
+        activity = str(
 
-            row["OI"] / previous_oi - 1
+            row["Activity"]
 
-        ) * 100
+        )
 
-        price_change = (
+        if activity == "ROLLOVER REVIEW":
 
-            row["Close"] / previous_close - 1
-
-        ) * 100
-
-        buildup = "NEUTRAL"
-
-        if (
-
-            price_change >= MIN_FUTURES_MOVE
-
-            and oi_change >= MIN_OI_CHANGE
-
-        ):
-
-            buildup = "LONG BUILDUP"
+            buildup = "ROLLOVER REVIEW"
 
         elif (
 
-            price_change <= -MIN_FUTURES_MOVE
+            abs(price_change) < MIN_FUTURES_MOVE
 
-            and oi_change >= MIN_OI_CHANGE
-
-        ):
-
-            buildup = "SHORT BUILDUP"
-
-        elif (
-
-            price_change >= MIN_FUTURES_MOVE
-
-            and oi_change <= -MIN_OI_CHANGE
+            or abs(oi_change) < MIN_OI_CHANGE
 
         ):
 
-            buildup = "SHORT COVERING"
+            buildup = "NEUTRAL"
 
-        elif (
+        else:
 
-            price_change <= -MIN_FUTURES_MOVE
+            buildup = activity
 
-            and oi_change <= -MIN_OI_CHANGE
+        result[name] = {
 
-        ):
+            "Futures OI":
 
-            buildup = "LONG UNWINDING"
+                row["Current Total OI"],
 
-        result[row["Symbol"]] = {
+            "Previous Futures OI":
 
-            "Futures Expiry": row["Expiry"],
+                row["Previous Total OI"],
 
-            "Futures OI": row["OI"],
+            "Futures OI Change %":
 
-            "Futures OI Change %": oi_change,
+                oi_change,
 
-            "Futures Price Change %": price_change,
+            "Futures Price Change %":
 
-            "Futures Buildup": buildup,
+                price_change,
 
-            "Futures Previous Date": previous_day
+            "Futures Volume":
+
+                row["Total Futures Volume"],
+
+            "Futures Expiry":
+
+                row["Compared Expiry"],
+
+            "Futures Buildup":
+
+                buildup,
+
+            "Futures Previous Date":
+
+                previous_day
 
         }
 
-    diagnostics.append({
+    coverage = (
 
-        "Source": "Futures",
+        len(result) / len(universe) * 100
 
-        "Status": "RECEIVED",
+        if universe
 
-        "Report Date": day,
+        else 0
+
+    )
+
+    status = {
+
+        "Status": (
+
+            "AVAILABLE"
+
+            if result
+
+            else "NO COMPARABLE CONTRACTS"
+
+        ),
+
+        "Current Date": day,
 
         "Previous Date": previous_day,
 
@@ -739,24 +771,135 @@ def futures_intelligence(paths, day, universe):
 
         "Universe": len(universe),
 
-        "Coverage %":
+        "Coverage %": round(coverage, 2)
 
-            round(len(result) / len(universe) * 100, 2)
+    }
+
+    diagnostics.append({
+
+        "Source": "Futures Analysis",
+
+        **status
 
     })
 
-    return result, diagnostics, "AVAILABLE"
+    return result, diagnostics, status
 
 
 # =====================================
-# BULK / BLOCK / SHORT SELLING
+# DEAL REPORT DISCOVERY
 # =====================================
 
-def deal_intelligence(paths, day, universe, kind):
+def discover_deal_sources():
+
+    result = {
+
+        "bulk": [],
+
+        "block": [],
+
+        "short": []
+
+    }
+
+    root = DATA / "nse"
+
+    if not root.exists():
+
+        return result
+
+    for path in root.rglob("latest.csv"):
+
+        parts = [
+
+            normalize(part)
+
+            for part in path.relative_to(
+
+                root
+
+            ).parts[:-2]
+
+        ]
+
+        name = "/".join(parts)
+
+        if "bulk" in name:
+
+            result["bulk"].append(path)
+
+        elif "block" in name:
+
+            result["block"].append(path)
+
+        elif (
+
+            "shortselling" in name
+
+            or "short" in parts
+
+        ):
+
+            result["short"].append(path)
+
+    return result
+
+
+# =====================================
+# DEAL REPORT ANALYSIS
+# =====================================
+
+def deal_intelligence(
+
+    paths,
+
+    day,
+
+    universe,
+
+    kind
+
+):
+
+    result = {}
 
     diagnostics = []
 
-    result = {}
+    available = sorted({
+
+        path.parent.name
+
+        for path in paths
+
+        if path.parent.name <= str(day)
+
+    }, reverse=True)
+
+    if not available:
+
+        return result, diagnostics, {
+
+            "Status": "REPORT MISSING"
+
+        }
+
+    if kind == "short":
+
+        report_day = available[0]
+
+    else:
+
+        report_day = str(day)
+
+        if report_day not in available:
+
+            return result, diagnostics, {
+
+                "Status": "LATEST REPORT MISSING",
+
+                "Latest Available": available[0]
+
+            }
 
     matching = [
 
@@ -764,35 +907,55 @@ def deal_intelligence(paths, day, universe, kind):
 
         for path in paths
 
-        if path.parent.name == day
+        if path.parent.name == report_day
 
     ]
 
-    if not matching:
+    if len(matching) != 1:
 
-        return result, diagnostics, "REPORT MISSING"
+        return result, diagnostics, {
 
-    if len(matching) > 1:
+            "Status": "AMBIGUOUS SOURCE",
 
-        return result, diagnostics, "MULTIPLE SOURCES - REVIEW"
+            "Report Date": report_day
+
+        }
 
     path = matching[0]
 
     try:
 
-        frame, meta = read_verified(path)
+        frame, metadata = read_verified(
 
-        frame = dated_records(frame, day)
+            path,
+
+            expected_date=report_day
+
+        )
+
+        validate_date(
+
+            frame,
+
+            report_day
+
+        )
 
         symbol_col = find_column(
 
             frame,
 
-            ["Symbol", "TCKRSYMB"]
+            [
+
+                "Symbol",
+
+                "TCKRSYMB"
+
+            ]
 
         )
 
-        qty_col = find_column(
+        quantity_col = find_column(
 
             frame,
 
@@ -804,13 +967,15 @@ def deal_intelligence(paths, day, universe, kind):
 
                 "Short Selling Quantity",
 
-                "Short Quantity"
+                "Short Quantity",
+
+                "Short Sell Quantity"
 
             ]
 
         )
 
-        if not symbol_col or not qty_col:
+        if not symbol_col or not quantity_col:
 
             raise ValueError(
 
@@ -834,7 +999,7 @@ def deal_intelligence(paths, day, universe, kind):
 
         frame["_qty"] = numeric(
 
-            frame[qty_col]
+            frame[quantity_col]
 
         )
 
@@ -844,15 +1009,19 @@ def deal_intelligence(paths, day, universe, kind):
 
         ].copy()
 
-        if not frame["_qty"].map(
-
-            lambda x: number(x) is not None and x >= 0
-
-        ).all():
+        if not frame["_qty"].map(finite).all():
 
             raise ValueError(
 
-                "Invalid deal quantities"
+                "Invalid deal quantity"
+
+            )
+
+        if frame["_qty"].lt(0).any():
+
+            raise ValueError(
+
+                "Negative deal quantity"
 
             )
 
@@ -860,13 +1029,21 @@ def deal_intelligence(paths, day, universe, kind):
 
         if kind == "short":
 
-            for name, group in frame.groupby("_symbol"):
+            for name, group in frame.groupby(
+
+                "_symbol"
+
+            ):
 
                 result[name] = {
 
                     "Short Selling Quantity":
 
-                        float(group["_qty"].sum())
+                        float(group["_qty"].sum()),
+
+                    "Short Selling Date":
+
+                        report_day
 
                 }
 
@@ -932,7 +1109,11 @@ def deal_intelligence(paths, day, universe, kind):
 
             prefix = kind.title()
 
-            for name, group in frame.groupby("_symbol"):
+            for name, group in frame.groupby(
+
+                "_symbol"
+
+            ):
 
                 buy = group.loc[
 
@@ -962,27 +1143,45 @@ def deal_intelligence(paths, day, universe, kind):
 
                     prefix + " Records":
 
-                        len(group)
+                        len(group),
+
+                    prefix + " Report Date":
+
+                        report_day
 
                 }
+
+        status = {
+
+            "Status": (
+
+                "RECEIVED"
+
+                if report_day == str(day)
+
+                else "OLDER REPORT - CONTEXT ONLY"
+
+            ),
+
+            "Report Date": report_day,
+
+            "Records": len(frame),
+
+            "Matched Stocks": len(result)
+
+        }
 
         diagnostics.append({
 
             "Source": kind,
 
-            "Status": "RECEIVED",
+            "File": str(path),
 
-            "Report Date": day,
-
-            "Records": len(frame),
-
-            "Matched Stocks": len(result),
-
-            "File": str(path)
+            **status
 
         })
 
-        return result, diagnostics, "RECEIVED"
+        return result, diagnostics, status
 
     except Exception as error:
 
@@ -998,14 +1197,45 @@ def deal_intelligence(paths, day, universe, kind):
 
         })
 
-        return {}, diagnostics, "REJECTED"
+        return result, diagnostics, {
+
+            "Status": "REJECTED",
+
+            "Reason": str(error)
+
+        }
+
+
+# =====================================
+# SOURCE STATUS PER STOCK
+# =====================================
+
+def stock_source_status(status, matched):
+
+    if matched:
+
+        return "RECORD FOUND"
+
+    if status.get("Status") == "RECEIVED":
+
+        return "NO MATCHED RECORD"
+
+    if status.get("Status") == (
+
+        "OLDER REPORT - CONTEXT ONLY"
+
+    ):
+
+        return "OLDER REPORT - NO MATCH"
+
+    return "UNAVAILABLE"
 
 
 # =====================================
 # FINAL STOCK IDENTIFICATION
 # =====================================
 
-def build_derivatives_watchlist():
+def build_advanced_watchlist():
 
     base, summary, news, announcements = (
 
@@ -1015,15 +1245,15 @@ def build_derivatives_watchlist():
 
     day = summary["report_date"]
 
-    universe = set(base["Symbol"])
+    universe = set(
 
-    sources = discover_sources()
+        base["Symbol"]
+
+    )
 
     futures, diagnostics, futures_status = (
 
         futures_intelligence(
-
-            sources["futures"],
 
             day,
 
@@ -1033,6 +1263,8 @@ def build_derivatives_watchlist():
 
     )
 
+    sources = discover_deal_sources()
+
     deals = {}
 
     statuses = {
@@ -1041,17 +1273,29 @@ def build_derivatives_watchlist():
 
     }
 
-    for kind in ["bulk", "block", "short"]:
+    for kind in [
 
-        data, logs, status = deal_intelligence(
+        "bulk",
 
-            sources[kind],
+        "block",
 
-            day,
+        "short"
 
-            universe,
+    ]:
 
-            kind
+        data, logs, status = (
+
+            deal_intelligence(
+
+                sources[kind],
+
+                day,
+
+                universe,
+
+                kind
+
+            )
 
         )
 
@@ -1069,15 +1313,17 @@ def build_derivatives_watchlist():
 
         name = item["Symbol"]
 
-        future = futures.get(name, {})
-
         item.update({
 
             "Futures OI": None,
 
+            "Previous Futures OI": None,
+
             "Futures OI Change %": None,
 
             "Futures Price Change %": None,
+
+            "Futures Volume": None,
 
             "Futures Expiry": None,
 
@@ -1093,11 +1339,17 @@ def build_derivatives_watchlist():
 
             "Block Sell Quantity": None,
 
-            "Short Selling Quantity": None
+            "Short Selling Quantity": None,
+
+            "Short Selling Date": None
 
         })
 
-        item.update(future)
+        item.update(
+
+            futures.get(name, {})
+
+        )
 
         for kind in deals:
 
@@ -1107,49 +1359,93 @@ def build_derivatives_watchlist():
 
             )
 
-        item["Bulk / Block Deals"] = (
+        item["Bulk Status"] = (
 
-            "RECORD FOUND"
+            stock_source_status(
 
-            if name in deals["bulk"]
+                statuses["bulk"],
 
-            or name in deals["block"]
+                name in deals["bulk"]
 
-            else "NO MATCHED RECORD"
+            )
+
+        )
+
+        item["Block Status"] = (
+
+            stock_source_status(
+
+                statuses["block"],
+
+                name in deals["block"]
+
+            )
 
         )
 
         item["Short Selling"] = (
 
-            "RECORD FOUND"
+            stock_source_status(
 
-            if name in deals["short"]
+                statuses["short"],
 
-            else "NO MATCHED RECORD"
+                name in deals["short"]
+
+            )
 
         )
 
-        move = number(item.get("Change %"))
+        move = number(
 
-        volume = number(item.get("Volume Ratio"))
+            item.get("Change %")
 
-        turnover = number(item.get("Turnover Ratio"))
+        )
 
         strength = number(
 
-            item.get("Relative Strength vs Universe %")
+            item.get(
+
+                "Relative Strength vs Universe %"
+
+            )
+
+        )
+
+        volume = number(
+
+            item.get("Volume Ratio")
+
+        )
+
+        turnover = number(
+
+            item.get("Turnover Ratio")
+
+        )
+
+        delivery = number(
+
+            item.get(
+
+                "Delivery Quantity Ratio"
+
+            )
 
         )
 
         participation = (
 
-            volume is not None
+            meets(volume, MIN_VOLUME_RATIO)
 
-            and turnover is not None
+            and meets(turnover, MIN_TURNOVER_RATIO)
 
-            and volume >= MIN_VOLUME_RATIO
+        )
 
-            and turnover >= MIN_TURNOVER_RATIO
+        delivery_activity = meets(
+
+            delivery,
+
+            MIN_DELIVERY_RATIO
 
         )
 
@@ -1163,13 +1459,45 @@ def build_derivatives_watchlist():
 
         )
 
-        buildup = item["Futures Buildup"]
-
         deal_activity = (
 
             name in deals["bulk"]
 
             or name in deals["block"]
+
+        )
+
+        buildup = item["Futures Buildup"]
+
+        bullish_reaction = (
+
+            move is not None
+
+            and strength is not None
+
+            and move >= MIN_PRICE_MOVE
+
+            and strength >= MIN_RELATIVE_STRENGTH
+
+        )
+
+        bearish_reaction = (
+
+            move is not None
+
+            and strength is not None
+
+            and move <= -MIN_PRICE_MOVE
+
+            and strength <= -MIN_RELATIVE_STRENGTH
+
+        )
+
+        extended = (
+
+            move is not None
+
+            and abs(move) >= MAX_EARLY_MOVE
 
         )
 
@@ -1183,45 +1511,148 @@ def build_derivatives_watchlist():
 
             )
 
-        if buildup not in ["UNAVAILABLE", "NEUTRAL"]:
+        if delivery_activity:
+
+            reasons.append(
+
+                "Abnormal delivery quantity"
+
+            )
+
+        if bullish_reaction:
+
+            reasons.append(
+
+                "Positive relative strength"
+
+            )
+
+        if bearish_reaction:
+
+            reasons.append(
+
+                "Negative relative strength"
+
+            )
+
+        if buildup not in [
+
+            "UNAVAILABLE",
+
+            "NEUTRAL"
+
+        ]:
 
             reasons.append(buildup)
 
         if catalyst:
 
-            reasons.append("Catalyst review required")
+            reasons.append(
+
+                "News / event review required"
+
+            )
 
         if deal_activity:
 
-            reasons.append("Disclosed deal activity")
+            reasons.append(
+
+                "Disclosed deal activity"
+
+            )
 
         if name in deals["short"]:
 
-            reasons.append("Short selling reported")
+            reasons.append(
+
+                "Reported short selling - "
+
+                + str(
+
+                    item["Short Selling Date"]
+
+                )
+
+            )
 
         category = "NO PRIORITY"
 
         bias = "UNCONFIRMED"
 
-        if move is not None and abs(move) >= MAX_EARLY_MOVE:
+        confirmation = "PENDING"
 
-            if participation or catalyst:
+        # Do not force a directional signal
+        # when price and futures disagree.
 
-                category = "EXTENDED MOVE - REVIEW"
+        conflict = (
+
+            bullish_reaction
+
+            and buildup in [
+
+                "SHORT BUILDUP",
+
+                "LONG UNWINDING"
+
+            ]
+
+        ) or (
+
+            bearish_reaction
+
+            and buildup in [
+
+                "LONG BUILDUP",
+
+                "SHORT COVERING"
+
+            ]
+
+        )
+
+        if extended and (
+
+            participation
+
+            or catalyst
+
+            or deal_activity
+
+            or buildup not in [
+
+                "UNAVAILABLE",
+
+                "NEUTRAL"
+
+            ]
+
+        ):
+
+            category = "EXTENDED MOVE - REVIEW"
+
+            reasons.append(
+
+                "Large closing move - avoid chasing"
+
+            )
+
+        elif conflict:
+
+            category = "CONFLICT - WAIT"
+
+            reasons.append(
+
+                "Cash and futures evidence conflict"
+
+            )
 
         elif (
 
             participation
 
+            and bullish_reaction
+
             and buildup == "LONG BUILDUP"
-
-            and move is not None
-
-            and strength is not None
-
-            and move > 0
-
-            and strength > 0
 
         ):
 
@@ -1229,19 +1660,15 @@ def build_derivatives_watchlist():
 
             bias = "UPWARD BIAS"
 
+            confirmation = "FUTURES ALIGNED"
+
         elif (
 
             participation
 
+            and bearish_reaction
+
             and buildup == "SHORT BUILDUP"
-
-            and move is not None
-
-            and strength is not None
-
-            and move < 0
-
-            and strength < 0
 
         ):
 
@@ -1249,9 +1676,41 @@ def build_derivatives_watchlist():
 
             bias = "DOWNWARD BIAS"
 
+            confirmation = "FUTURES ALIGNED"
+
+        elif participation and bullish_reaction:
+
+            category = "PRELIMINARY BULLISH"
+
+            bias = "UPWARD BIAS"
+
+            confirmation = "FUTURES NOT CONFIRMED"
+
+        elif participation and bearish_reaction:
+
+            category = "PRELIMINARY BEARISH"
+
+            bias = "DOWNWARD BIAS"
+
+            confirmation = "FUTURES NOT CONFIRMED"
+
         elif participation:
 
             category = "EMERGING ACTIVITY"
+
+        elif buildup in [
+
+            "LONG BUILDUP",
+
+            "SHORT BUILDUP",
+
+            "SHORT COVERING",
+
+            "LONG UNWINDING"
+
+        ]:
+
+            category = "FUTURES WATCH"
 
         elif catalyst:
 
@@ -1261,21 +1720,62 @@ def build_derivatives_watchlist():
 
             category = "DEAL REVIEW"
 
-        elif buildup not in ["NEUTRAL", "UNAVAILABLE"]:
+        elif delivery_activity:
 
-            category = "FUTURES WATCH"
+            category = "DELIVERY WATCH"
 
-        item["V1.9.1 Category"] = category
+        elif buildup == "ROLLOVER REVIEW":
 
-        item["V1.9.1 Bias"] = bias
+            category = "ROLLOVER REVIEW"
 
-        item["V1.9.1 Evidence"] = " | ".join(reasons)
+        # Count distinct evidence groups.
+        # This is not a probability score.
 
-        item["Live Confirmation Required"] = True
+        evidence_groups = sum([
+
+            bool(participation),
+
+            bool(delivery_activity),
+
+            bool(
+
+                bullish_reaction
+
+                or bearish_reaction
+
+            ),
+
+            bool(
+
+                confirmation == "FUTURES ALIGNED"
+
+            )
+
+        ])
+
+        item.update({
+
+            "Category": category,
+
+            "Directional Bias": bias,
+
+            "Confirmation": confirmation,
+
+            "Evidence Groups": evidence_groups,
+
+            "Evidence": " | ".join(reasons),
+
+            "Live Confirmation Required": True,
+
+            "Option Chain": "NOT INTEGRATED",
+
+            "Greeks": "NOT INTEGRATED"
+
+        })
 
         rows.append(item)
 
-    result = pd.DataFrame(rows)
+    frame = pd.DataFrame(rows)
 
     ranks = {
 
@@ -1283,31 +1783,61 @@ def build_derivatives_watchlist():
 
         "PRIORITY BEARISH": 1,
 
-        "EMERGING ACTIVITY": 2,
+        "PRELIMINARY BULLISH": 2,
 
-        "EVENT WATCH": 3,
+        "PRELIMINARY BEARISH": 2,
 
-        "DEAL REVIEW": 4,
+        "EMERGING ACTIVITY": 3,
 
-        "FUTURES WATCH": 5,
+        "FUTURES WATCH": 4,
 
-        "EXTENDED MOVE - REVIEW": 6,
+        "EVENT WATCH": 5,
 
-        "NO PRIORITY": 7
+        "DEAL REVIEW": 6,
+
+        "DELIVERY WATCH": 7,
+
+        "CONFLICT - WAIT": 8,
+
+        "ROLLOVER REVIEW": 9,
+
+        "EXTENDED MOVE - REVIEW": 10,
+
+        "NO PRIORITY": 11
 
     }
 
-    result["_rank"] = (
+    frame["_rank"] = (
 
-        result["V1.9.1 Category"].map(ranks)
+        frame["Category"].map(ranks)
 
     )
 
-    result = result.sort_values(
+    frame = frame.sort_values(
 
-        ["_rank", "Volume Ratio"],
+        [
 
-        ascending=[True, False],
+            "_rank",
+
+            "Evidence Groups",
+
+            "Volume Ratio",
+
+            "Symbol"
+
+        ],
+
+        ascending=[
+
+            True,
+
+            False,
+
+            False,
+
+            True
+
+        ],
 
         na_position="last"
 
@@ -1317,25 +1847,47 @@ def build_derivatives_watchlist():
 
         "version": VERSION,
 
+        "status": "RESEARCH WATCHLIST",
+
         "derivatives_status": statuses,
 
-        "futures_comparable_stocks": len(futures),
+        "futures_comparable_stocks":
 
-        "bulk_matched_stocks": len(deals["bulk"]),
+            len(futures),
 
-        "block_matched_stocks": len(deals["block"]),
+        "futures_coverage_percent":
 
-        "short_matched_stocks": len(deals["short"]),
+            round(
 
-        "option_chain_status": "NOT INTEGRATED",
+                len(futures)
 
-        "greeks_status": "NOT INTEGRATED",
+                / len(universe)
 
-        "status": "PRELIMINARY RESEARCH"
+                * 100,
+
+                2
+
+            ) if universe else 0,
+
+        "category_counts":
+
+            frame["Category"]
+
+            .value_counts()
+
+            .to_dict(),
+
+        "option_chain_status":
+
+            "NOT INTEGRATED",
+
+        "greeks_status":
+
+            "NOT INTEGRATED"
 
     })
 
-    return result, summary, diagnostics
+    return frame, summary, diagnostics
 
 
 # =====================================
@@ -1346,23 +1898,27 @@ def render_derivatives():
 
     st.header(
 
-        "POST MARKET INTELLIGENCE V" + VERSION
+        "POST MARKET INTELLIGENCE V"
+
+        + VERSION
 
     )
 
     st.caption(
 
-        "Futures OI | Deals | Short Selling | "
+        "Full F&O Universe | "
 
-        "Full Universe Research"
+        "Historical Research | "
+
+        "No Automatic Orders"
 
     )
 
     st.warning(
 
-        "Watchlist only. Futures positioning and "
+        "Post-market watchlist is not "
 
-        "disclosed deals do not guarantee direction."
+        "a confirmed next-session trade signal."
 
     )
 
@@ -1372,7 +1928,7 @@ def render_derivatives():
 
         type="primary",
 
-        key="advanced_watchlist_v191"
+        key="advanced_watchlist_v192"
 
     ):
 
@@ -1380,13 +1936,15 @@ def render_derivatives():
 
             with st.spinner(
 
-                "Analyzing historical market data..."
+                "Checking historical reports "
+
+                "and analyzing F&O stocks..."
 
             ):
 
-                st.session_state["v191_result"] = (
+                st.session_state["v192_result"] = (
 
-                    build_derivatives_watchlist()
+                    build_advanced_watchlist()
 
                 )
 
@@ -1394,7 +1952,7 @@ def render_derivatives():
 
             st.session_state.pop(
 
-                "v191_result",
+                "v192_result",
 
                 None
 
@@ -1402,9 +1960,19 @@ def render_derivatives():
 
             st.error(str(error))
 
-    result = st.session_state.get("v191_result")
+    result = st.session_state.get(
+
+        "v192_result"
+
+    )
 
     if result is None:
+
+        st.info(
+
+            "Generate watchlist to begin."
+
+        )
 
         return
 
@@ -1412,39 +1980,35 @@ def render_derivatives():
 
     st.caption(
 
-        "Report Date: " + summary["report_date"]
+        "Report Date: "
 
-        + " | Generated: " + summary["generated_at"]
+        + summary["report_date"]
+
+        + " | Generated: "
+
+        + summary["generated_at"]
 
     )
 
-    if summary["report_date"] != now().date().isoformat():
+    if summary["report_date"] != (
 
-        st.warning("Earlier session report in use.")
+        now().date().isoformat()
 
-    categories = [
+    ):
 
-        "PRIORITY BULLISH",
+        st.warning(
 
-        "PRIORITY BEARISH",
+            "Using earlier trading session data."
 
-        "EMERGING ACTIVITY",
+        )
 
-        "EVENT WATCH",
+    categories = frame["Category"]
 
-        "DEAL REVIEW",
-
-        "FUTURES WATCH",
-
-        "EXTENDED MOVE - REVIEW"
-
-    ]
-
-    a, b, c, d = st.columns(4)
+    a, b, c = st.columns(3)
 
     a.metric(
 
-        "Universe",
+        "F&O Universe",
 
         len(frame)
 
@@ -1452,43 +2016,161 @@ def render_derivatives():
 
     b.metric(
 
-        "Priority Bullish",
-
-        int(
-
-            frame["V1.9.1 Category"]
-
-            .eq("PRIORITY BULLISH").sum()
-
-        )
-
-    )
-
-    c.metric(
-
-        "Priority Bearish",
-
-        int(
-
-            frame["V1.9.1 Category"]
-
-            .eq("PRIORITY BEARISH").sum()
-
-        )
-
-    )
-
-    d.metric(
-
         "Futures Comparable",
 
         summary["futures_comparable_stocks"]
 
     )
 
-    st.subheader("Source Status")
+    c.metric(
 
-    st.json(summary["derivatives_status"])
+        "Futures Coverage",
+
+        str(
+
+            summary["futures_coverage_percent"]
+
+        ) + "%"
+
+    )
+
+    a, b = st.columns(2)
+
+    a.metric(
+
+        "Priority Bullish",
+
+        int(
+
+            categories.eq(
+
+                "PRIORITY BULLISH"
+
+            ).sum()
+
+        )
+
+    )
+
+    b.metric(
+
+        "Priority Bearish",
+
+        int(
+
+            categories.eq(
+
+                "PRIORITY BEARISH"
+
+            ).sum()
+
+        )
+
+    )
+
+    a, b = st.columns(2)
+
+    a.metric(
+
+        "Preliminary Bullish",
+
+        int(
+
+            categories.eq(
+
+                "PRELIMINARY BULLISH"
+
+            ).sum()
+
+        )
+
+    )
+
+    b.metric(
+
+        "Preliminary Bearish",
+
+        int(
+
+            categories.eq(
+
+                "PRELIMINARY BEARISH"
+
+            ).sum()
+
+        )
+
+    )
+
+    st.metric(
+
+        "Emerging Activity",
+
+        int(
+
+            categories.eq(
+
+                "EMERGING ACTIVITY"
+
+            ).sum()
+
+        )
+
+    )
+
+    if summary["futures_comparable_stocks"] == 0:
+
+        st.warning(
+
+            "Futures unavailable. "
+
+            "Preliminary cash-market watchlists "
+
+            "remain available where qualified."
+
+        )
+
+    elif summary["futures_coverage_percent"] < 90:
+
+        st.warning(
+
+            "Partial futures coverage. "
+
+            "Review source diagnostics."
+
+        )
+
+    with st.expander(
+
+        "DATA SOURCE STATUS",
+
+        expanded=True
+
+    ):
+
+        for source, status in (
+
+            summary["derivatives_status"].items()
+
+        ):
+
+            st.write(
+
+                source.upper()
+
+                + ": "
+
+                + status.get(
+
+                    "Status",
+
+                    "UNKNOWN"
+
+                )
+
+            )
+
+            st.json(status)
 
     tabs = st.tabs([
 
@@ -1504,7 +2186,7 @@ def render_derivatives():
 
         "Futures",
 
-        "Extended",
+        "Extended / Conflict",
 
         "All Stocks",
 
@@ -1516,13 +2198,19 @@ def render_derivatives():
 
         "Symbol",
 
-        "V1.9.1 Category",
+        "Category",
 
-        "V1.9.1 Bias",
+        "Directional Bias",
+
+        "Confirmation",
+
+        "Evidence Groups",
 
         "Close",
 
         "Change %",
+
+        "Relative Strength vs Universe %",
 
         "Volume Ratio",
 
@@ -1536,6 +2224,8 @@ def render_derivatives():
 
         "Futures Buildup",
 
+        "Futures Expiry",
+
         "Bulk Buy Quantity",
 
         "Bulk Sell Quantity",
@@ -1546,7 +2236,9 @@ def render_derivatives():
 
         "Short Selling Quantity",
 
-        "V1.9.1 Evidence",
+        "Short Selling Date",
+
+        "Evidence",
 
         "Latest News",
 
@@ -1554,19 +2246,79 @@ def render_derivatives():
 
     ]
 
-    for index, category in enumerate(categories):
+    groups = [
+
+        [
+
+            "PRIORITY BULLISH",
+
+            "PRELIMINARY BULLISH"
+
+        ],
+
+        [
+
+            "PRIORITY BEARISH",
+
+            "PRELIMINARY BEARISH"
+
+        ],
+
+        [
+
+            "EMERGING ACTIVITY",
+
+            "DELIVERY WATCH"
+
+        ],
+
+        [
+
+            "EVENT WATCH"
+
+        ],
+
+        [
+
+            "DEAL REVIEW"
+
+        ],
+
+        [
+
+            "FUTURES WATCH",
+
+            "ROLLOVER REVIEW"
+
+        ],
+
+        [
+
+            "EXTENDED MOVE - REVIEW",
+
+            "CONFLICT - WAIT"
+
+        ]
+
+    ]
+
+    for index, group in enumerate(groups):
 
         with tabs[index]:
 
             selected = frame[
 
-                frame["V1.9.1 Category"].eq(category)
+                frame["Category"].isin(group)
 
             ]
 
             if selected.empty:
 
-                st.info("No qualifying stocks.")
+                st.info(
+
+                    "No qualifying stocks."
+
+                )
 
             else:
 
@@ -1579,6 +2331,42 @@ def render_derivatives():
                     use_container_width=True
 
                 )
+
+    with tabs[4]:
+
+        st.subheader(
+
+            "All Stocks With Disclosed Deals"
+
+        )
+
+        deal_rows = frame[
+
+            frame["Bulk Status"].eq(
+
+                "RECORD FOUND"
+
+            )
+
+            |
+
+            frame["Block Status"].eq(
+
+                "RECORD FOUND"
+
+            )
+
+        ]
+
+        st.dataframe(
+
+            deal_rows[columns],
+
+            hide_index=True,
+
+            use_container_width=True
+
+        )
 
     with tabs[7]:
 
@@ -1600,21 +2388,29 @@ def render_derivatives():
 
             pd.DataFrame(diagnostics),
 
-            use_container_width=True
+            use_container_width=True,
+
+            hide_index=True
 
         )
 
         st.caption(
 
-            "Missing reports are not zero activity. "
+            "Older short-selling reports "
 
-            "Option Chain and Greeks are pending."
+            "are context only. "
+
+            "Missing data is not zero activity."
 
         )
 
     watchlist = frame[
 
-        frame["V1.9.1 Category"].ne("NO PRIORITY")
+        frame["Category"].ne(
+
+            "NO PRIORITY"
+
+        )
 
     ]
 
@@ -1624,9 +2420,36 @@ def render_derivatives():
 
         watchlist.to_csv(index=False),
 
-        "post_market_watchlist_v191.csv",
+        "post_market_watchlist_v192.csv",
 
         mime="text/csv"
 
     )
 
+    st.download_button(
+
+        "DOWNLOAD FULL UNIVERSE",
+
+        frame.to_csv(index=False),
+
+        "full_universe_v192.csv",
+
+        mime="text/csv"
+
+    )
+
+    st.download_button(
+
+        "DOWNLOAD SOURCE DIAGNOSTICS",
+
+        pd.DataFrame(
+
+            diagnostics
+
+        ).to_csv(index=False),
+
+        "source_diagnostics_v192.csv",
+
+        mime="text/csv"
+
+    )
