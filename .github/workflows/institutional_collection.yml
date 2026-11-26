@@ -1,0 +1,69 @@
+
+name: F&O Institutional Intelligence Collection
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 14 * * 1-5'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fo-historical-data-writer
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout latest main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas lxml
+
+      - name: Synchronize latest repository
+        run: git pull --ff-only origin main
+
+      - name: Run institutional collector
+        id: collector
+        continue-on-error: true
+        run: python institutional_data_engine.py
+
+      - name: Save historical data
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add historical_data/
+
+          if git diff --cached --quiet; then
+            echo "No new historical data"
+          else
+            git commit -m "Automatic institutional data collection"
+            git pull --rebase origin main
+            git push origin main
+          fi
+
+      - name: Verify collection result
+        if: always()
+        run: |
+          if [ -f historical_data/latest_institutional_collection.json ]; then
+            cat historical_data/latest_institutional_collection.json
+          fi
+
+          if [ "${{ steps.collector.outcome }}" != "success" ]; then
+            exit 1
+          fi
