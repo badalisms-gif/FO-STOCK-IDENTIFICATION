@@ -1,0 +1,90 @@
+
+name: F&O Stock Intelligence Collection
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: '20 3 * * 1-5'
+    - cron: '30 13 * * 1-5'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fo-stock-intelligence
+  cancel-in-progress: false
+
+jobs:
+
+  collect:
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    steps:
+
+      - name: Checkout latest main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run stock intelligence collector
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+        run: |
+          python stock_intelligence_engine.py
+
+      - name: Save historical data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add historical_data/
+
+          if git diff --cached --quiet; then
+            echo "No new data"
+          else
+            git commit -m "Update stock intelligence historical data"
+            git pull --rebase origin main
+            git push origin main
+          fi
+
+      - name: Verify collection result
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "historical_data/latest_stock_intelligence.json"
+          )
+
+          if not path.exists():
+              raise SystemExit("Collection report missing")
+
+          report = json.loads(path.read_text())
+
+          print("Version:", report["version"])
+          print("Universe:", report["universe_size"])
+          print("Status:", report["overall_status"])
+          print("Required ready:", report["latest_required_ready"])
+          print("Required missing:", report["latest_required_missing"])
+          print("Supporting received:", report["supporting_sources_received"])
+          print("Failed attempts:", report["failed_attempts"])
+
+          if report["overall_status"] == "FAILED":
+              raise SystemExit(1)
+          PY
