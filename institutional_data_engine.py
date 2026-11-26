@@ -8,6 +8,7 @@ import pandas as pd
 
 from datetime import datetime, date, timedelta
 from lxml import html
+from concurrent.futures import ThreadPoolExecutor
 
 from daily_collector import DATA, now, save_json
 
@@ -17,7 +18,7 @@ from futures_intelligence_engine import (
     collect_source
 )
 
-VERSION = "1.5.2"
+VERSION = "1.5.3"
 
 ARCHIVE = "https://nsearchives.nseindia.com"
 
@@ -46,6 +47,8 @@ MAPPING = {
     "optionstockputlong": "Stock Put Long",
     "optionstockputshort": "Stock Put Short"
 }
+
+SUCCESS = {"SAVED", "UNCHANGED"}
 
 
 # =====================================
@@ -119,7 +122,7 @@ def verify_date(title, day):
 
 
 # =====================================
-# STRICT NUMERIC VALIDATION
+# NUMERIC VALIDATION
 # =====================================
 
 def strict_numeric(series):
@@ -159,6 +162,7 @@ def fetch_participant_oi(day):
     )
 
     raw = download(url)
+
     text = raw.decode("utf-8-sig")
 
     lines = text.splitlines()
@@ -178,8 +182,6 @@ def fetch_participant_oi(day):
         )
 
     title = " ".join(lines[:header])
-
-    print("Participant title:", title)
 
     verify_date(title, day)
 
@@ -356,11 +358,16 @@ def fetch_participant_oi(day):
         ensure_ascii=False
     )
 
+    result["Eligible For Analysis"] = (
+        len(warnings) == 0
+    )
+
     if warnings:
 
         print(
             "Official report imbalance:",
-            json.dumps(warnings)
+            json.dumps(warnings),
+            flush=True
         )
 
     return result, url
@@ -374,29 +381,21 @@ def validate_cash(rows, day, scope):
 
     frame = pd.DataFrame(rows)
 
-    required = {
+    required = [
         "Report Date",
         "Category",
         "Buy Cr",
         "Sell Cr",
         "Net Cr"
-    }
+    ]
 
-    if not required <= set(frame.columns):
+    if not set(required) <= set(frame.columns):
 
         raise ValueError(
             "FII DII columns incomplete"
         )
 
-    frame = frame[
-        [
-            "Report Date",
-            "Category",
-            "Buy Cr",
-            "Sell Cr",
-            "Net Cr"
-        ]
-    ].copy()
+    frame = frame[required].copy()
 
     if len(frame) != 2:
 
@@ -467,8 +466,23 @@ def validate_cash(rows, day, scope):
             "Cash net value mismatch"
         )
 
+    verified = scope == "NSE+BSE+MSEI"
+
     frame["Market Scope"] = scope
-    frame["Validation Status"] = "VERIFIED"
+
+    frame["Numeric Validation"] = True
+
+    frame["Date Validation"] = True
+
+    frame["Scope Verified"] = verified
+
+    frame["Validation Status"] = (
+        "VERIFIED"
+        if verified
+        else "SCOPE_UNVERIFIED"
+    )
+
+    frame["Eligible For Analysis"] = verified
 
     return frame
 
@@ -540,7 +554,7 @@ def normalize_cash_table(table):
         .str.upper()
     )
 
-    table = table[
+    return table[
         table["Category"].isin([
             "FII",
             "FPI",
@@ -550,22 +564,20 @@ def normalize_cash_table(table):
         ])
     ].copy()
 
-    return table
-
 
 # =====================================
-# FIND COMBINED MARKET TABLES
+# VERIFIED COMBINED MARKET TABLE
 # =====================================
 
-def combined_cash_tables(content, day, mse=False):
+def combined_cash_tables(content, day):
 
     document = html.fromstring(content)
 
-    all_frames = []
+    valid_frames = []
 
     for element in document.xpath("//table"):
 
-        heading = element.xpath(
+        headings = element.xpath(
             "preceding::*["
             "self::h1 or self::h2 or "
             "self::h3 or self::h4 or "
@@ -575,9 +587,9 @@ def combined_cash_tables(content, day, mse=False):
 
         context = ""
 
-        if heading:
+        if headings:
 
-            context = heading[0].text_content()
+            context = headings[0].text_content()
 
         context += " " + " ".join(
             element.xpath(".//caption//text()")
@@ -586,11 +598,20 @@ def combined_cash_tables(content, day, mse=False):
         context = context.upper()
 
         combined = all(
-            token in context
-            for token in ["NSE", "BSE", "MSE"]
+            re.search(
+                rf"\b{token}\b",
+                context
+            )
+            for token in ["NSE", "BSE"]
+        ) and bool(
+            re.search(r"\bMSEI?\b", context)
         )
 
-        if not combined and not mse:
+        if not combined:
+
+            continue
+
+        if "EXCLUSIVE" in context:
 
             continue
 
@@ -609,112 +630,109 @@ def combined_cash_tables(content, day, mse=False):
                 table
             )
 
-            if normalized is not None:
+            if normalized is None:
 
-                if not normalized.empty:
+                continue
 
-                    all_frames.append(normalized)
+            try:
 
-    if not all_frames:
+                frame = validate_cash(
+                    normalized.to_dict("records"),
+                    day,
+                    "NSE+BSE+MSEI"
+                )
+
+                valid_frames.append(frame)
+
+            except ValueError:
+
+                continue
+
+    if len(valid_frames) != 1:
 
         raise ValueError(
-            "Combined cash tables not found"
+            "Unambiguous combined cash table "
+            "not found"
         )
 
-    merged = pd.concat(
-        all_frames,
-        ignore_index=True
-    ).drop_duplicates()
-
-    required = [
-        "Report Date",
-        "Category",
-        "Buy Cr",
-        "Sell Cr",
-        "Net Cr"
-    ]
-
-    merged = merged[
-        required
-    ].drop_duplicates()
-
-    return validate_cash(
-        merged.to_dict("records"),
-        day,
-        "NSE+BSE+MSEI"
-    )
+    return valid_frames[0]
 
 
 # =====================================
-# OFFICIAL CASH DATA SOURCES
+# OFFICIAL COMBINED CASH SOURCE
 # =====================================
 
 def fetch_fii_dii(day):
 
-    errors = []
-
     sources = [
-        (
-            "https://www.nseindia.in/reports/fii-dii",
-            False
-        ),
-        (
-            "https://nseindia.in/reports/fii-dii",
-            False
-        ),
-        (
-            "https://www.nseindia.com/reports/fii-dii",
-            False
-        ),
-        (
-            "https://beta.msei.in/downloads/"
-            "equity-reports/fii-dii-activities",
-            True
-        ),
-        (
-            "https://beta.mseindia.com/markets/"
-            "markets-information/"
-            "fii-dii-trading-activities",
-            True
-        )
+        "https://www.nseindia.in/reports/fii-dii",
+        "https://www.nseindia.com/reports/fii-dii"
     ]
 
-    for url, mse in sources:
+    def attempt(url):
 
         try:
 
             response = requests.get(
                 url,
                 headers=HEADERS,
-                timeout=(10, 25)
+                timeout=(5, 10)
             )
 
             response.raise_for_status()
 
             frame = combined_cash_tables(
                 response.content,
-                day,
-                mse=mse
+                day
             )
 
             frame["Source URL"] = url
 
-            return frame, url
+            return frame, url, ""
 
         except Exception as error:
 
-            errors.append(
-                f"{url}: {error}"
-            )
+            return None, url, str(error)
 
-    # Alternative NSE JSON endpoint.
-    # Scope must be verified independently
-    # before treating this as combined activity.
+    errors = []
 
-    for host in [
+    with ThreadPoolExecutor(
+        max_workers=2
+    ) as executor:
+
+        results = list(
+            executor.map(attempt, sources)
+        )
+
+    for frame, url, error in results:
+
+        if frame is not None:
+
+            return frame, url
+
+        errors.append(
+            f"{url}: {error}"
+        )
+
+    raise ValueError(
+        "Combined cash scope not verified: "
+        + " | ".join(errors)
+    )
+
+
+# =====================================
+# NSE JSON CASH DATA
+# SEPARATE UNVERIFIED STORAGE
+# =====================================
+
+def fetch_cash_candidate(day):
+
+    hosts = [
         "https://www.nseindia.com",
         "https://www.nseindia.in"
-    ]:
+    ]
+
+    def attempt(host):
 
         url = host + "/api/fiidiiTradeReact"
 
@@ -727,7 +745,7 @@ def fetch_fii_dii(day):
                     "Accept": "application/json",
                     "Referer": host + "/"
                 },
-                timeout=(10, 20)
+                timeout=(5, 12)
             )
 
             response.raise_for_status()
@@ -758,43 +776,125 @@ def fetch_fii_dii(day):
                 "UNVERIFIED_EXCHANGE_SCOPE"
             )
 
-            # Save separately for diagnostics.
-            # Do not mix into combined cash history.
+            frame["Source URL"] = url
 
-            save_json(
-                DATA
-                / "logs"
-                / str(day)
-                / "cash_json_candidate.json",
-                {
-                    "source": url,
-                    "date": str(day),
-                    "status": "SCOPE_UNVERIFIED",
-                    "records": frame.to_dict(
-                        "records"
-                    )
-                }
-            )
-
-            errors.append(
-                f"{url}: valid data but "
-                "exchange scope unverified"
-            )
+            return frame, url, payload, ""
 
         except Exception as error:
 
-            errors.append(
-                f"{url}: {error}"
+            return None, url, None, str(error)
+
+    with ThreadPoolExecutor(
+        max_workers=2
+    ) as executor:
+
+        results = list(
+            executor.map(attempt, hosts)
+        )
+
+    valid = [
+        item for item in results
+        if item[0] is not None
+    ]
+
+    if not valid:
+
+        raise ValueError(
+            "NSE cash API unavailable: "
+            + " | ".join(
+                f"{item[1]}: {item[3]}"
+                for item in results
+            )
+        )
+
+    columns = [
+        "Category",
+        "Buy Cr",
+        "Sell Cr",
+        "Net Cr"
+    ]
+
+    reference = (
+        valid[0][0][columns]
+        .sort_values("Category")
+        .reset_index(drop=True)
+    )
+
+    for item in valid[1:]:
+
+        other = (
+            item[0][columns]
+            .sort_values("Category")
+            .reset_index(drop=True)
+        )
+
+        if not reference.equals(other):
+
+            raise ValueError(
+                "NSE cash API sources disagree"
             )
 
-    raise ValueError(
-        "Official combined cash report unavailable: "
-        + " | ".join(errors)
+    frame, url, payload, _ = valid[0]
+
+    frame["Matching API Hosts"] = len(valid)
+
+    save_json(
+        DATA
+        / "logs"
+        / str(day)
+        / "cash_json_candidate.json",
+        {
+            "version": VERSION,
+            "source": url,
+            "date": str(day),
+            "status": "SCOPE_UNVERIFIED",
+            "eligible_for_analysis": False,
+            "matching_hosts": len(valid),
+            "raw_payload": payload,
+            "records": frame.to_dict("records")
+        }
     )
+
+    print(
+        "NSE cash data received; "
+        "date and numeric validation passed; "
+        "exchange scope remains unverified.",
+        flush=True
+    )
+
+    return frame, url
 
 
 # =====================================
-# COLLECTION
+# SAFE COLLECTION WRAPPER
+# =====================================
+
+def safe_collect(source, day, fetcher):
+
+    try:
+
+        result = collect_source(
+            source,
+            day,
+            fetcher
+        )
+
+        return result
+
+    except Exception as error:
+
+        return {
+            "source": source,
+            "status": "FAILED",
+            "records": None,
+            "requested_date": str(day),
+            "actual_date": None,
+            "error": str(error)
+        }
+
+
+# =====================================
+# DAILY COLLECTION
 # =====================================
 
 def main():
@@ -804,7 +904,8 @@ def main():
     results = []
 
     print(
-        f"Institutional Engine V{VERSION}"
+        f"Institutional Engine V{VERSION}",
+        flush=True
     )
 
     trading_days = []
@@ -820,32 +921,59 @@ def main():
             or day in HOLIDAYS
         ):
 
-            print(day, "MARKET CLOSED")
+            print(
+                day,
+                "MARKET CLOSED",
+                flush=True
+            )
+
             continue
 
         trading_days.append(day)
 
-        result = collect_source(
+        result = safe_collect(
             "participant_oi",
             day,
             fetch_participant_oi
         )
 
         results.append(result)
-        print(result)
 
-    if trading_days:
+        print(result, flush=True)
 
-        cash_day = trading_days[0]
+    latest_day = (
+        trading_days[0]
+        if trading_days
+        else None
+    )
 
-        result = collect_source(
+    if latest_day:
+
+        result = safe_collect(
             "fii_dii",
-            cash_day,
+            latest_day,
             fetch_fii_dii
         )
 
         results.append(result)
-        print(result)
+
+        print(result, flush=True)
+
+        if result["status"] not in SUCCESS:
+
+            candidate = safe_collect(
+                "fii_dii_unverified",
+                latest_day,
+                fetch_cash_candidate
+            )
+
+            candidate["scope_verified"] = False
+
+            candidate["eligible_for_analysis"] = False
+
+            results.append(candidate)
+
+            print(candidate, flush=True)
 
     successful = sorted({
 
@@ -853,43 +981,28 @@ def main():
 
         for r in results
 
-        if r["status"] in [
-            "SAVED",
-            "UNCHANGED"
-        ]
+        if r["status"] in SUCCESS
 
     })
 
-    missing = sorted({
+    expected = {
         "participant_oi",
         "fii_dii"
-    } - set(successful))
+    }
 
-    failed_attempts = [
-        r for r in results
-        if r["status"] == "FAILED"
-    ]
-
-    latest_day = (
-        trading_days[0]
-        if trading_days else None
+    missing = sorted(
+        expected - set(successful)
     )
 
     latest_missing = []
 
-    for source in [
-        "participant_oi",
-        "fii_dii"
-    ]:
+    for source in expected:
 
         found = any(
 
             r["source"] == source
 
-            and r["status"] in [
-                "SAVED",
-                "UNCHANGED"
-            ]
+            and r["status"] in SUCCESS
 
             and str(
                 r.get("actual_date")
@@ -903,15 +1016,67 @@ def main():
 
             latest_missing.append(source)
 
+    candidate_available = (
+        "fii_dii_unverified" in successful
+    )
+
+    latest_oi_available = (
+        "participant_oi" not in latest_missing
+    )
+
+    combined_available = (
+        "fii_dii" not in latest_missing
+    )
+
+    if latest_oi_available and combined_available:
+
+        overall = "COMPLETE"
+
+    elif latest_oi_available or candidate_available:
+
+        overall = "PARTIAL"
+
+    else:
+
+        overall = "FAILED"
+
     summary = {
         "version": VERSION,
-        "collection_time": now().isoformat(),
-        "latest_expected_date": str(latest_day),
-        "successful_sources": successful,
-        "missing_sources": missing,
-        "latest_missing_sources": latest_missing,
-        "failed_attempts": len(failed_attempts),
-        "results": results
+
+        "collection_time":
+            now().isoformat(),
+
+        "latest_expected_date":
+            str(latest_day),
+
+        "overall_status":
+            overall,
+
+        "successful_sources":
+            successful,
+
+        "missing_sources":
+            missing,
+
+        "latest_missing_sources":
+            sorted(latest_missing),
+
+        "participant_oi_latest_available":
+            latest_oi_available,
+
+        "combined_cash_verified":
+            combined_available,
+
+        "unverified_cash_available":
+            candidate_available,
+
+        "failed_attempts": sum(
+            r["status"] == "FAILED"
+            for r in results
+        ),
+
+        "results":
+            results
     }
 
     save_json(
@@ -925,10 +1090,11 @@ def main():
             summary,
             indent=2,
             default=str
-        )
+        ),
+        flush=True
     )
 
-    if missing or latest_missing:
+    if overall == "FAILED":
 
         raise SystemExit(1)
 
