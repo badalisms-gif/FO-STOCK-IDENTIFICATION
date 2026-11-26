@@ -1,0 +1,121 @@
+
+name: Automatic Pre-Market Intelligence V2.7
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Collection mode
+        required: true
+        default: OVERNIGHT
+        type: choice
+        options:
+          - OVERNIGHT
+          - PREOPEN
+
+  schedule:
+    - cron: '0 3 * * 1-5'
+    - cron: '25 3 * * 1-5'
+    - cron: '36 3 * * 1-5'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: automatic-premarket
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+
+      - name: Select collection mode
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          MANUAL_MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "PREMARKET_MODE=$MANUAL_MODE" >> "$GITHUB_ENV"
+          elif [ "$SCHEDULE" = "0 3 * * 1-5" ]; then
+            echo "PREMARKET_MODE=OVERNIGHT" >> "$GITHUB_ENV"
+          else
+            echo "PREMARKET_MODE=PREOPEN" >> "$GITHUB_ENV"
+          fi
+
+      - name: Collect automatic premarket intelligence
+        id: collect
+        continue-on-error: true
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+          PYTHONUNBUFFERED: '1'
+        run: |
+          python automatic_premarket_engine.py
+
+      - name: Save permanent premarket archive
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          ARCHIVE="historical_data/stock_intelligence/automatic_premarket"
+
+          if [ ! -d "$ARCHIVE" ]; then
+            echo "No automatic archive generated"
+            exit 0
+          fi
+
+          git add -f "$ARCHIVE"
+
+          if git diff --cached --quiet; then
+            echo "No archive changes"
+            exit 0
+          fi
+
+          git commit -m "Update automatic premarket archive"
+
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              echo "Premarket archive published"
+              exit 0
+            fi
+
+            git rebase --abort || true
+            sleep 10
+          done
+
+          exit 1
+
+      - name: Backup archive
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: premarket-${{ github.run_id }}-${{ github.run_attempt }}
+          path: historical_data/stock_intelligence/automatic_premarket/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Verify collection result
+        if: always()
+        run: |
+          if [ "${{ steps.collect.outcome }}" != "success" ]; then
+            echo "Automatic premarket collection failed"
+            exit 1
+          fi
+
+          echo "Automatic premarket process finished"
