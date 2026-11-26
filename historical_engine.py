@@ -1,25 +1,30 @@
-
 import io
 import json
 import hashlib
+import zipfile
 import requests
 import pandas as pd
 import streamlit as st
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from concurrent.futures import ThreadPoolExecutor
+from pathlib import PurePosixPath
 
 
-VERSION = "1.4"
+VERSION = "1.4.1"
 
 IST = ZoneInfo("Asia/Kolkata")
 
 REPO = "badalisms-gif/FO-STOCK-IDENTIFICATION"
 
-API = f"https://api.github.com/repos/{REPO}"
+ZIP_URL = (
+    f"https://codeload.github.com/"
+    f"{REPO}/zip/refs/heads/main"
+)
 
-RAW = f"https://raw.githubusercontent.com/{REPO}"
+MAX_ZIP_SIZE = 100 * 1024 * 1024
+MAX_FILE_SIZE = 25 * 1024 * 1024
+MAX_TOTAL_SIZE = 200 * 1024 * 1024
 
 SOURCES = ["bulk", "block", "short"]
 
@@ -35,87 +40,153 @@ def today_ist():
     return datetime.now(IST).date()
 
 
-def get_bytes(url):
-
-    response = requests.get(
-        url,
-        timeout=(10, 30),
-        headers={
-            "User-Agent": "FO-Intelligence-V1.4"
-        }
-    )
-
-    response.raise_for_status()
-
-    if len(response.content) > 25_000_000:
-
-        raise ValueError(
-            "File exceeds size limit"
-        )
-
-    return response.content
-
-
-def get_json(url):
-
-    return json.loads(
-        get_bytes(url)
-    )
-
-
 # =====================================
-# GITHUB REPOSITORY INDEX
+# GITHUB ZIP ARCHIVE
+# NO GITHUB REST API
 # =====================================
 
 @st.cache_data(ttl=300, show_spinner=False)
-def repository_index():
+def repository_archive():
 
-    commit = get_json(
-        f"{API}/commits/main"
-    )
+    raw = bytearray()
 
-    sha = commit["sha"]
+    with requests.get(
 
-    tree_sha = commit[
-        "commit"
-    ]["tree"]["sha"]
+        ZIP_URL,
 
-    tree = get_json(
-        f"{API}/git/trees/"
-        f"{tree_sha}?recursive=1"
-    )
+        timeout=(15, 90),
 
-    if tree.get("truncated"):
+        stream=True,
+
+        headers={
+            "User-Agent": "FO-Intelligence-V1.4.1"
+        }
+
+    ) as response:
+
+        response.raise_for_status()
+
+        for chunk in response.iter_content(
+            chunk_size=65536
+        ):
+
+            raw.extend(chunk)
+
+            if len(raw) > MAX_ZIP_SIZE:
+
+                raise ValueError(
+                    "Repository ZIP exceeds size limit"
+                )
+
+    files = {}
+
+    total_size = 0
+
+    with zipfile.ZipFile(
+        io.BytesIO(raw)
+    ) as archive:
+
+        for item in archive.infolist():
+
+            if item.is_dir():
+
+                continue
+
+            parts = PurePosixPath(
+                item.filename
+            ).parts
+
+            if len(parts) < 3:
+
+                continue
+
+            if parts[1] != "historical_data":
+
+                continue
+
+            if ".." in parts:
+
+                raise ValueError(
+                    "Invalid archive path"
+                )
+
+            if item.file_size > MAX_FILE_SIZE:
+
+                raise ValueError(
+                    "Historical file exceeds size limit"
+                )
+
+            total_size += item.file_size
+
+            if total_size > MAX_TOTAL_SIZE:
+
+                raise ValueError(
+                    "Historical archive exceeds memory limit"
+                )
+
+            path = "/".join(parts[1:])
+
+            if path in files:
+
+                raise ValueError(
+                    "Duplicate archive path"
+                )
+
+            files[path] = archive.read(item)
+
+    if not files:
 
         raise ValueError(
-            "Repository index truncated"
+            "No historical data found in repository"
         )
 
-    paths = {
+    snapshot = hashlib.sha256()
 
-        item["path"]
+    for path in sorted(files):
 
-        for item in tree["tree"]
+        snapshot.update(path.encode("utf-8"))
+        snapshot.update(b"\x00")
+        snapshot.update(
+            hashlib.sha256(files[path]).digest()
+        )
 
-        if item["type"] == "blob"
+    archive_id = snapshot.hexdigest()
 
-    }
-
-    return sha, paths
+    return archive_id, files
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
+# =====================================
+# REPOSITORY INDEX
+# =====================================
+
+def repository_index():
+
+    archive_id, files = repository_archive()
+
+    return archive_id, set(files.keys())
+
+
 def read_file(sha, path):
 
-    return get_bytes(
-        f"{RAW}/{sha}/{path}"
-    )
+    archive_id, files = repository_archive()
+
+    if archive_id != sha:
+
+        raise ValueError(
+            "Archive changed. Refresh historical data."
+        )
+
+    if path not in files:
+
+        raise FileNotFoundError(path)
+
+    return files[path]
 
 
 def read_json_file(sha, path):
 
     return json.loads(
-        read_file(sha, path)
+        read_file(sha, path).decode("utf-8-sig")
     )
 
 
@@ -132,23 +203,18 @@ def discover_reports(paths):
         parts = path.split("/")
 
         if len(parts) != 5:
-
             continue
 
         if parts[0] != "historical_data":
-
             continue
 
         if parts[1] != "nse":
-
             continue
 
         if parts[2] not in SOURCES:
-
             continue
 
         if parts[4] != "latest.csv":
-
             continue
 
         try:
@@ -176,35 +242,24 @@ def discover_reports(paths):
 
 
 # =====================================
-# VERIFY AND READ SNAPSHOT
+# VERIFY STORED SNAPSHOT
 # =====================================
 
 def verified_snapshot(sha, path):
 
-    raw = read_file(
-        sha,
-        path
-    )
+    raw = read_file(sha, path)
 
     metadata_path = (
-
         path.rsplit("/", 1)[0]
-
         + "/metadata.json"
-
     )
 
     metadata = read_json_file(
-
         sha,
-
         metadata_path
-
     )
 
-    digest = hashlib.sha256(
-        raw
-    ).hexdigest()
+    digest = hashlib.sha256(raw).hexdigest()
 
     if digest != metadata.get("sha256"):
 
@@ -216,9 +271,7 @@ def verified_snapshot(sha, path):
         io.BytesIO(raw)
     )
 
-    if len(frame) != int(
-        metadata["records"]
-    ):
+    if len(frame) != int(metadata["records"]):
 
         raise ValueError(
             "Record count mismatch"
@@ -228,7 +281,7 @@ def verified_snapshot(sha, path):
 
 
 # =====================================
-# LOAD LATEST F&O UNIVERSE
+# LOAD F&O UNIVERSE
 # =====================================
 
 def load_universe(sha, paths):
@@ -277,11 +330,8 @@ def load_universe(sha, paths):
     day, path = max(candidates)
 
     frame, metadata = verified_snapshot(
-
         sha,
-
         path
-
     )
 
     if "Symbol" not in frame.columns:
@@ -314,9 +364,9 @@ def load_universe(sha, paths):
             "Unexpected universe size"
         )
 
-    if str(metadata.get(
-        "snapshot_date"
-    )) != str(day):
+    if str(
+        metadata.get("snapshot_date")
+    ) != str(day):
 
         raise ValueError(
             "Universe date mismatch"
@@ -336,16 +386,13 @@ def load_report(sha, report):
     day = report["Date"]
 
     frame, metadata = verified_snapshot(
-
         sha,
-
         report["Path"]
-
     )
 
-    if str(metadata.get(
-        "report_date"
-    )) != str(day):
+    if str(
+        metadata.get("report_date")
+    ) != str(day):
 
         raise ValueError(
             "Metadata report date mismatch"
@@ -373,9 +420,7 @@ def load_report(sha, report):
 
         })
 
-    missing = required - set(
-        frame.columns
-    )
+    missing = required - set(frame.columns)
 
     if missing:
 
@@ -443,6 +488,10 @@ def load_report(sha, report):
 
         or (frame["Quantity"] < 0).any()
 
+        or frame["Quantity"].isin(
+            [float("inf"), float("-inf")]
+        ).any()
+
     ):
 
         raise ValueError(
@@ -477,6 +526,10 @@ def load_report(sha, report):
 
             or (frame["Price"] <= 0).any()
 
+            or frame["Price"].isin(
+                [float("inf"), float("-inf")]
+            ).any()
+
         ):
 
             raise ValueError(
@@ -510,9 +563,7 @@ def load_report(sha, report):
         )
 
         if not frame["Side"].isin(
-
             ["BUY", "SELL"]
-
         ).all():
 
             raise ValueError(
@@ -549,12 +600,19 @@ def load_report(sha, report):
 @st.cache_data(ttl=300, show_spinner=False)
 def load_history(days):
 
+    days = int(days)
+
+    if not 1 <= days <= 366:
+
+        raise ValueError(
+            "Invalid historical analysis period"
+        )
+
     sha, paths = repository_index()
 
-    universe, universe_date = (
-
-        load_universe(sha, paths)
-
+    universe, universe_date = load_universe(
+        sha,
+        paths
     )
 
     end = today_ist()
@@ -579,19 +637,18 @@ def load_history(days):
 
     diagnostics = []
 
-    def task(report):
+    for report in selected:
 
         try:
 
             frame = load_report(
-
                 sha,
-
                 report
-
             )
 
-            return frame, {
+            frames.append(frame)
+
+            diagnostics.append({
 
                 "Date": report["Date"],
 
@@ -603,11 +660,11 @@ def load_history(days):
 
                 "Error": ""
 
-            }
+            })
 
         except Exception as error:
 
-            return None, {
+            diagnostics.append({
 
                 "Date": report["Date"],
 
@@ -619,27 +676,7 @@ def load_history(days):
 
                 "Error": str(error)
 
-            }
-
-    with ThreadPoolExecutor(
-        max_workers=6
-    ) as executor:
-
-        for frame, diagnostic in executor.map(
-
-            task,
-
-            selected
-
-        ):
-
-            diagnostics.append(
-                diagnostic
-            )
-
-            if frame is not None:
-
-                frames.append(frame)
+            })
 
     if frames:
 
@@ -697,7 +734,23 @@ def load_history(days):
         "universe_date": universe_date,
 
         "diagnostics": pd.DataFrame(
-            diagnostics
+
+            diagnostics,
+
+            columns=[
+
+                "Date",
+
+                "Source",
+
+                "Status",
+
+                "Records",
+
+                "Error"
+
+            ]
+
         ),
 
         "start": start,
@@ -705,6 +758,10 @@ def load_history(days):
         "end": end,
 
         "commit": sha,
+
+        "archive_id": sha,
+
+        "archive_method": "GITHUB ZIP",
 
         "latest_collection":
             latest_collection
@@ -718,9 +775,7 @@ def load_history(days):
 
 def coverage_table(history):
 
-    diagnostics = history[
-        "diagnostics"
-    ]
+    diagnostics = history["diagnostics"]
 
     rows = []
 
@@ -766,9 +821,7 @@ def coverage_table(history):
                         "Status"
                     ].iloc[0]
 
-            row[
-                SOURCE_NAMES[kind]
-            ] = status
+            row[SOURCE_NAMES[kind]] = status
 
         rows.append(row)
 
@@ -864,9 +917,7 @@ def stock_summary(data):
             for side in ["BUY", "SELL"]:
 
                 subset = frame[
-
                     frame["Side"] == side
-
                 ]
 
                 row[
@@ -1022,6 +1073,6 @@ def short_trend(data, symbol):
 
 def refresh_history():
 
-    repository_index.clear()
-
     load_history.clear()
+
+    repository_archive.clear()
