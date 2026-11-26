@@ -1,69 +1,94 @@
 {
-  "version": "1.5.3",
-  "collection_time": "2026-11-26T21:04:31.186512+05:30",
+  "version": "1.5.4",
+  "collection_time": "2026-11-26T21:13:13.877030+05:30",
   "latest_expected_date": "2026-11-26",
-  "overall_status": "PARTIAL",
+  "overall_status": "COMPLETE",
+  "required_sources": [
+    "participant_oi"
+  ],
+  "optional_sources": [
+    "fii_dii_unverified"
+  ],
   "successful_sources": [
     "fii_dii_unverified",
     "participant_oi"
   ],
-  "missing_sources": [
-    "fii_dii"
-  ],
-  "latest_missing_sources": [
-    "fii_dii",
-    "participant_oi"
-  ],
-  "participant_oi_latest_available": false,
+  "missing_sources": [],
+  "latest_missing_sources": [],
+  "participant_oi_latest_available": true,
+  "participant_oi_latest_eligible": true,
+  "combined_cash_required": false,
   "combined_cash_verified": false,
   "unverified_cash_available": true,
-  "failed_attempts": 4,
+  "cash_eligible_for_analysis": false,
+  "historical_oi_failed_attempts": 0,
+  "failed_attempts": 0,
   "results": [
     {
       "source": "participant_oi",
-      "status": "FAILED",
-      "records": null,
-      "requested_date": "2026-11-26",
-      "error": "Official column total mismatch: Index Put Long; calculated=4638143; official=4638142"
+      "status": "SAVED",
+      "records": 4,
+      "actual_date": "2026-11-26",
+      "sha256": "86b4443db33c958f2ec7762dafb8492b3c21ec9564cb8716125cc884181902c3",
+      "error": "",
+      "validation_status": [
+        "VERIFIED_WITH_WARNING"
+      ],
+      "eligible_for_analysis": true,
+      "validation_warnings": "[{\"type\": \"COLUMN_TOTAL\", \"field\": \"Index Put Long\", \"calculated\": 4638143, \"official\": 4638142, \"difference\": 1}, {\"type\": \"COLUMN_TOTAL\", \"field\": \"Index Put Short\", \"calculated\": 4638143, \"official\": 4638142, \"difference\": 1}]"
     },
     {
       "source": "participant_oi",
-      "status": "FAILED",
-      "records": null,
-      "requested_date": "2026-11-25",
-      "error": "Official column total mismatch: Index Call Long; calculated=3764976; official=3764977"
+      "status": "SAVED",
+      "records": 4,
+      "actual_date": "2026-11-25",
+      "sha256": "6acce6f7bf9d60aee34cead9a3b0454feb2cdaa0e4bc5cf91fa2209fda2279f9",
+      "error": "",
+      "validation_status": [
+        "VERIFIED_WITH_WARNING"
+      ],
+      "eligible_for_analysis": true,
+      "validation_warnings": "[{\"type\": \"COLUMN_TOTAL\", \"field\": \"Index Call Long\", \"calculated\": 3764976, \"official\": 3764977, \"difference\": -1}, {\"type\": \"MARKET_BALANCE\", \"segment\": \"Index Call\", \"official_long\": 3764977, \"official_short\": 3764977, \"difference\": 0, \"participant_difference\": -1}]"
     },
     {
       "source": "participant_oi",
       "status": "SAVED",
       "records": 4,
       "actual_date": "2026-11-23",
-      "sha256": "a1c36fc12f50a8540fb818bbaa88c79cf746fd1a8f29832cc748a3c4507e6cab",
-      "error": ""
+      "sha256": "43837bc245f212161198b14c8400172ab92458404d9af6a5c71cb8adc3deb238",
+      "error": "",
+      "validation_status": [
+        "VERIFIED"
+      ],
+      "eligible_for_analysis": true,
+      "validation_warnings": "[]"
     },
     {
       "source": "participant_oi",
-      "status": "FAILED",
-      "records": null,
-      "requested_date": "2026-11-20",
-      "error": "Official column total mismatch: Index Put Short; calculated=7144282; official=7144281"
-    },
-    {
-      "source": "fii_dii",
-      "status": "FAILED",
-      "records": null,
-      "requested_date": "2026-11-26",
-      "error": "Combined cash scope not verified: https://www.nseindia.in/reports/fii-dii: Unambiguous combined cash table not found | https://www.nseindia.com/reports/fii-dii: Unambiguous combined cash table not found"
+      "status": "SAVED",
+      "records": 4,
+      "actual_date": "2026-11-20",
+      "sha256": "ea3d8ac131d6bc6ad2295a3e70918f736debccbf9c76372fd7f9e711e817b069",
+      "error": "",
+      "validation_status": [
+        "VERIFIED_WITH_WARNING"
+      ],
+      "eligible_for_analysis": true,
+      "validation_warnings": "[{\"type\": \"COLUMN_TOTAL\", \"field\": \"Index Put Short\", \"calculated\": 7144282, \"official\": 7144281, \"difference\": 1}, {\"type\": \"MARKET_BALANCE\", \"segment\": \"Index Put\", \"official_long\": 7144281, \"official_short\": 7144281, \"difference\": 0, \"participant_difference\": -1}]"
     },
     {
       "source": "fii_dii_unverified",
-      "status": "SAVED",
+      "status": "UNCHANGED",
       "records": 2,
       "actual_date": "2026-11-26",
       "sha256": "780452be37f7d2ba77957a78577757f93acad0f76fc711963a1c829b8bd5b45d",
       "error": "",
+      "validation_status": [
+        "SCOPE_UNVERIFIED"
+      ],
+      "eligible_for_analysis": false,
       "scope_verified": false,
-      "eligible_for_analysis": false
+      "optional_source": true
     }
   ]
 }
