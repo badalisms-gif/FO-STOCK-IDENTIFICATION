@@ -7,7 +7,6 @@ import requests
 import pandas as pd
 
 from datetime import datetime, date, timedelta
-from lxml import html
 from concurrent.futures import ThreadPoolExecutor
 
 from daily_collector import DATA, now, save_json
@@ -18,7 +17,7 @@ from futures_intelligence_engine import (
     collect_source
 )
 
-VERSION = "1.5.3"
+VERSION = "1.5.4"
 
 ARCHIVE = "https://nsearchives.nseindia.com"
 
@@ -31,7 +30,15 @@ HEADERS = {
     "Accept": "*/*"
 }
 
-CATEGORIES = {"FII", "DII", "CLIENT", "PRO"}
+CATEGORIES = {
+    "FII", "DII", "CLIENT", "PRO"
+}
+
+SUCCESS = {
+    "SAVED", "UNCHANGED"
+}
+
+OI_TOLERANCE = 1
 
 MAPPING = {
     "futureindexlong": "Index Futures Long",
@@ -48,7 +55,14 @@ MAPPING = {
     "optionstockputshort": "Stock Put Short"
 }
 
-SUCCESS = {"SAVED", "UNCHANGED"}
+SEGMENTS = [
+    "Index Futures",
+    "Stock Futures",
+    "Index Call",
+    "Index Put",
+    "Stock Call",
+    "Stock Put"
+]
 
 
 # =====================================
@@ -80,11 +94,15 @@ def parse_date(value):
     ]
 
     for fmt in formats:
+
         try:
+
             return datetime.strptime(
                 value, fmt
             ).date()
+
         except ValueError:
+
             pass
 
     raise ValueError(
@@ -106,11 +124,18 @@ def verify_date(title, day):
 
     for pattern in patterns:
 
-        for token in re.findall(pattern, title):
+        for token in re.findall(
+            pattern, title
+        ):
 
             try:
-                detected.add(parse_date(token))
+
+                detected.add(
+                    parse_date(token)
+                )
+
             except ValueError:
+
                 pass
 
     if day not in detected:
@@ -122,16 +147,19 @@ def verify_date(title, day):
 
 
 # =====================================
-# NUMERIC VALIDATION
+# STRICT NUMERIC VALIDATION
 # =====================================
 
 def strict_numeric(series):
 
     values = pd.to_numeric(
+
         series.astype(str)
         .str.replace(",", "", regex=False)
         .str.strip(),
+
         errors="coerce"
+
     )
 
     if values.isna().any():
@@ -150,7 +178,7 @@ def strict_numeric(series):
 
 
 # =====================================
-# PARTICIPANT OI
+# PARTICIPANT WISE OI
 # =====================================
 
 def fetch_participant_oi(day):
@@ -168,11 +196,15 @@ def fetch_participant_oi(day):
     lines = text.splitlines()
 
     header = next(
+
         (
             i for i, line in enumerate(lines)
+
             if "clienttype" in normalize(line)
         ),
+
         None
+
     )
 
     if header is None:
@@ -186,20 +218,37 @@ def fetch_participant_oi(day):
     verify_date(title, day)
 
     frame = pd.read_csv(
+
         io.StringIO(text),
+
         skiprows=header,
+
         index_col=False,
+
         dtype=str
+
     )
 
     frame.columns = [
+
         normalize(c)
+
         for c in frame.columns
+
     ]
 
+    if frame.columns.duplicated().any():
+
+        raise ValueError(
+            "Duplicate report columns"
+        )
+
     required = {
+
         "clienttype",
+
         *MAPPING.keys()
+
     }
 
     if not required <= set(frame.columns):
@@ -210,16 +259,26 @@ def fetch_participant_oi(day):
         )
 
     frame["clienttype"] = (
+
         frame["clienttype"]
         .fillna("")
         .str.strip()
         .str.upper()
+
     )
 
     totals = frame[
-        frame["clienttype"].isin(
-            ["TOTAL", "TOTALS", "GRAND TOTAL"]
-        )
+
+        frame["clienttype"].isin([
+
+            "TOTAL",
+
+            "TOTALS",
+
+            "GRAND TOTAL"
+
+        ])
+
     ].copy()
 
     if len(totals) != 1:
@@ -229,12 +288,21 @@ def fetch_participant_oi(day):
         )
 
     participants = frame[
-        frame["clienttype"].isin(CATEGORIES)
+
+        frame["clienttype"].isin(
+            CATEGORIES
+        )
+
     ].copy()
 
     if (
+
         len(participants) != 4
-        or set(participants["clienttype"]) != CATEGORIES
+
+        or set(
+            participants["clienttype"]
+        ) != CATEGORIES
+
     ):
 
         raise ValueError(
@@ -246,11 +314,25 @@ def fetch_participant_oi(day):
     )
 
     result = pd.DataFrame({
+
         "Report Date": str(day),
-        "Participant": participants["clienttype"]
+
+        "Participant":
+            participants["clienttype"]
+
     })
 
     official_totals = {}
+
+    calculated_totals = {}
+
+    column_warnings = []
+
+    market_warnings = []
+
+    # =================================
+    # COLUMN TOTAL RECONCILIATION
+    # =================================
 
     for original, output in MAPPING.items():
 
@@ -263,8 +345,11 @@ def fetch_participant_oi(day):
         ).iloc[0]
 
         if (
+
             (values < 0).any()
+
             or official < 0
+
         ):
 
             raise ValueError(
@@ -272,8 +357,11 @@ def fetch_participant_oi(day):
             )
 
         if (
+
             (values % 1 != 0).any()
+
             or official % 1 != 0
+
         ):
 
             raise ValueError(
@@ -281,32 +369,64 @@ def fetch_participant_oi(day):
             )
 
         calculated = int(values.sum())
+
         official = int(official)
 
-        if calculated != official:
+        difference = calculated - official
+
+        if abs(difference) > OI_TOLERANCE:
 
             raise ValueError(
+
                 f"Official column total mismatch: "
-                f"{output}; calculated={calculated}; "
-                f"official={official}"
+
+                f"{output}; "
+
+                f"calculated={calculated}; "
+
+                f"official={official}; "
+
+                f"difference={difference}"
+
             )
 
-        result[output] = values.astype("int64")
+        if difference != 0:
+
+            column_warnings.append({
+
+                "type": "COLUMN_TOTAL",
+
+                "field": output,
+
+                "calculated": calculated,
+
+                "official": official,
+
+                "difference": difference
+
+            })
+
+        result[output] = values.astype(
+            "int64"
+        )
 
         official_totals[output] = official
 
-    segments = [
-        "Index Futures",
-        "Stock Futures",
-        "Index Call",
-        "Index Put",
-        "Stock Call",
-        "Stock Put"
-    ]
+        calculated_totals[output] = calculated
 
-    warnings = []
+        result[
+            output + " Official Total"
+        ] = official
 
-    for segment in segments:
+        result[
+            output + " Column Difference"
+        ] = difference
+
+    # =================================
+    # MARKET LONG SHORT RECONCILIATION
+    # =================================
+
+    for segment in SEGMENTS:
 
         long_total = official_totals[
             segment + " Long"
@@ -318,57 +438,211 @@ def fetch_participant_oi(day):
 
         difference = long_total - short_total
 
+        participant_difference = (
+
+            calculated_totals[
+                segment + " Long"
+            ]
+
+            - calculated_totals[
+                segment + " Short"
+            ]
+
+        )
+
         result[
             segment + " Market Imbalance"
         ] = difference
 
-        if difference != 0:
+        result[
+            segment + " Participant Imbalance"
+        ] = participant_difference
 
-            warnings.append({
+        if (
+
+            difference != 0
+
+            or participant_difference != 0
+
+        ):
+
+            market_warnings.append({
+
+                "type": "MARKET_BALANCE",
+
                 "segment": segment,
+
                 "official_long": long_total,
+
                 "official_short": short_total,
-                "difference": difference
+
+                "difference": difference,
+
+                "participant_difference":
+                    participant_difference
+
             })
 
+        segment_eligible = (
+
+            abs(difference) <= OI_TOLERANCE
+
+            and
+
+            abs(participant_difference)
+            <= OI_TOLERANCE
+
+        )
+
+        result[
+            segment + " Eligible"
+        ] = segment_eligible
+
+    # =================================
+    # NET PARTICIPANT POSITIONS
+    # =================================
+
     result["Net Index Futures"] = (
+
         result["Index Futures Long"]
+
         - result["Index Futures Short"]
+
     )
 
     result["Net Stock Futures"] = (
+
         result["Stock Futures Long"]
+
         - result["Stock Futures Short"]
+
     )
 
-    result["Column Totals Verified"] = True
+    result["Net Index Calls"] = (
+
+        result["Index Call Long"]
+
+        - result["Index Call Short"]
+
+    )
+
+    result["Net Index Puts"] = (
+
+        result["Index Put Long"]
+
+        - result["Index Put Short"]
+
+    )
+
+    result["Net Stock Calls"] = (
+
+        result["Stock Call Long"]
+
+        - result["Stock Call Short"]
+
+    )
+
+    result["Net Stock Puts"] = (
+
+        result["Stock Put Long"]
+
+        - result["Stock Put Short"]
+
+    )
+
+    warnings = (
+
+        column_warnings
+
+        + market_warnings
+
+    )
+
+    market_eligible = all(
+
+        abs(item["difference"])
+        <= OI_TOLERANCE
+
+        and
+
+        abs(item["participant_difference"])
+        <= OI_TOLERANCE
+
+        for item in market_warnings
+
+    )
+
+    result["Column Totals Verified"] = (
+        len(column_warnings) == 0
+    )
+
+    result["Column Totals Within Tolerance"] = True
 
     result["Market Balance Verified"] = (
-        len(warnings) == 0
+        len(market_warnings) == 0
     )
 
+    result["Market Balance Within Tolerance"] = (
+        market_eligible
+    )
+
+    result["OI Tolerance"] = OI_TOLERANCE
+
+    if not market_eligible:
+
+        validation_status = (
+            "STORAGE_ONLY"
+        )
+
+    elif warnings:
+
+        validation_status = (
+            "VERIFIED_WITH_WARNING"
+        )
+
+    else:
+
+        validation_status = "VERIFIED"
+
     result["Validation Status"] = (
-        "VERIFIED_WITH_WARNING"
-        if warnings
-        else "VERIFIED"
+        validation_status
     )
 
     result["Validation Warning"] = json.dumps(
+
         warnings,
+
         ensure_ascii=False
+
     )
 
     result["Eligible For Analysis"] = (
-        len(warnings) == 0
+        market_eligible
     )
 
-    if warnings:
+    result["Source URL"] = url
 
-        print(
-            "Official report imbalance:",
-            json.dumps(warnings),
-            flush=True
-        )
+    print(
+
+        json.dumps({
+
+            "date": str(day),
+
+            "source": "participant_oi",
+
+            "validation_status":
+                validation_status,
+
+            "eligible_for_analysis":
+                market_eligible,
+
+            "warnings": warnings
+
+        }),
+
+        flush=True
+
+    )
 
     return result, url
 
@@ -377,16 +651,22 @@ def fetch_participant_oi(day):
 # FII DII CASH VALIDATION
 # =====================================
 
-def validate_cash(rows, day, scope):
+def validate_cash(rows, day):
 
     frame = pd.DataFrame(rows)
 
     required = [
+
         "Report Date",
+
         "Category",
+
         "Buy Cr",
+
         "Sell Cr",
+
         "Net Cr"
+
     ]
 
     if not set(required) <= set(frame.columns):
@@ -404,19 +684,31 @@ def validate_cash(rows, day, scope):
         )
 
     frame["Category"] = (
+
         frame["Category"]
+
         .astype(str)
+
         .str.strip()
+
         .str.upper()
+
         .replace({
+
             "FII": "FII/FPI",
+
             "FPI": "FII/FPI",
+
             "FII / FPI": "FII/FPI"
+
         })
+
     )
 
     if set(frame["Category"]) != {
+
         "FII/FPI", "DII"
+
     }:
 
         raise ValueError(
@@ -430,16 +722,25 @@ def validate_cash(rows, day, scope):
     if not dates.eq(day).all():
 
         raise ValueError(
+
             f"Stale cash report: "
-            f"{dates.tolist()}; expected={day}"
+
+            f"{dates.tolist()}; "
+
+            f"expected={day}"
+
         )
 
     frame["Report Date"] = str(day)
 
     for column in [
+
         "Buy Cr",
+
         "Sell Cr",
+
         "Net Cr"
+
     ]:
 
         frame[column] = strict_numeric(
@@ -447,7 +748,11 @@ def validate_cash(rows, day, scope):
         )
 
     if (
-        frame[["Buy Cr", "Sell Cr"]] < 0
+
+        frame[
+            ["Buy Cr", "Sell Cr"]
+        ] < 0
+
     ).any().any():
 
         raise ValueError(
@@ -455,9 +760,13 @@ def validate_cash(rows, day, scope):
         )
 
     difference = (
+
         frame["Buy Cr"]
+
         - frame["Sell Cr"]
+
         - frame["Net Cr"]
+
     ).abs()
 
     if (difference > 0.05).any():
@@ -466,270 +775,38 @@ def validate_cash(rows, day, scope):
             "Cash net value mismatch"
         )
 
-    verified = scope == "NSE+BSE+MSEI"
-
-    frame["Market Scope"] = scope
+    frame["Market Scope"] = (
+        "UNVERIFIED_EXCHANGE_SCOPE"
+    )
 
     frame["Numeric Validation"] = True
 
     frame["Date Validation"] = True
 
-    frame["Scope Verified"] = verified
+    frame["Scope Verified"] = False
 
     frame["Validation Status"] = (
-        "VERIFIED"
-        if verified
-        else "SCOPE_UNVERIFIED"
+        "SCOPE_UNVERIFIED"
     )
 
-    frame["Eligible For Analysis"] = verified
+    frame["Eligible For Analysis"] = False
 
     return frame
 
 
 # =====================================
-# CASH TABLE NORMALIZATION
-# =====================================
-
-def normalize_cash_table(table):
-
-    table = table.copy()
-
-    if isinstance(
-        table.columns,
-        pd.MultiIndex
-    ):
-
-        table.columns = [
-            " ".join(map(str, col))
-            for col in table.columns
-        ]
-
-    mapping = {}
-
-    for col in table.columns:
-
-        key = normalize(col)
-
-        if "category" in key:
-
-            mapping[col] = "Category"
-
-        elif "date" in key:
-
-            mapping[col] = "Report Date"
-
-        elif "buyvalue" in key:
-
-            mapping[col] = "Buy Cr"
-
-        elif "sellvalue" in key:
-
-            mapping[col] = "Sell Cr"
-
-        elif "netvalue" in key:
-
-            mapping[col] = "Net Cr"
-
-    table = table.rename(
-        columns=mapping
-    )
-
-    required = {
-        "Category",
-        "Report Date",
-        "Buy Cr",
-        "Sell Cr",
-        "Net Cr"
-    }
-
-    if not required <= set(table.columns):
-
-        return None
-
-    table["Category"] = (
-        table["Category"]
-        .astype(str)
-        .str.strip()
-        .str.upper()
-    )
-
-    return table[
-        table["Category"].isin([
-            "FII",
-            "FPI",
-            "FII/FPI",
-            "FII / FPI",
-            "DII"
-        ])
-    ].copy()
-
-
-# =====================================
-# VERIFIED COMBINED MARKET TABLE
-# =====================================
-
-def combined_cash_tables(content, day):
-
-    document = html.fromstring(content)
-
-    valid_frames = []
-
-    for element in document.xpath("//table"):
-
-        headings = element.xpath(
-            "preceding::*["
-            "self::h1 or self::h2 or "
-            "self::h3 or self::h4 or "
-            "self::h5 or self::h6"
-            "][1]"
-        )
-
-        context = ""
-
-        if headings:
-
-            context = headings[0].text_content()
-
-        context += " " + " ".join(
-            element.xpath(".//caption//text()")
-        )
-
-        context = context.upper()
-
-        combined = all(
-            re.search(
-                rf"\b{token}\b",
-                context
-            )
-            for token in ["NSE", "BSE"]
-        ) and bool(
-            re.search(r"\bMSEI?\b", context)
-        )
-
-        if not combined:
-
-            continue
-
-        if "EXCLUSIVE" in context:
-
-            continue
-
-        tables = pd.read_html(
-            io.StringIO(
-                html.tostring(
-                    element,
-                    encoding="unicode"
-                )
-            )
-        )
-
-        for table in tables:
-
-            normalized = normalize_cash_table(
-                table
-            )
-
-            if normalized is None:
-
-                continue
-
-            try:
-
-                frame = validate_cash(
-                    normalized.to_dict("records"),
-                    day,
-                    "NSE+BSE+MSEI"
-                )
-
-                valid_frames.append(frame)
-
-            except ValueError:
-
-                continue
-
-    if len(valid_frames) != 1:
-
-        raise ValueError(
-            "Unambiguous combined cash table "
-            "not found"
-        )
-
-    return valid_frames[0]
-
-
-# =====================================
-# OFFICIAL COMBINED CASH SOURCE
-# =====================================
-
-def fetch_fii_dii(day):
-
-    sources = [
-        "https://www.nseindia.in/reports/fii-dii",
-        "https://www.nseindia.com/reports/fii-dii"
-    ]
-
-    def attempt(url):
-
-        try:
-
-            response = requests.get(
-                url,
-                headers=HEADERS,
-                timeout=(5, 10)
-            )
-
-            response.raise_for_status()
-
-            frame = combined_cash_tables(
-                response.content,
-                day
-            )
-
-            frame["Source URL"] = url
-
-            return frame, url, ""
-
-        except Exception as error:
-
-            return None, url, str(error)
-
-    errors = []
-
-    with ThreadPoolExecutor(
-        max_workers=2
-    ) as executor:
-
-        results = list(
-            executor.map(attempt, sources)
-        )
-
-    for frame, url, error in results:
-
-        if frame is not None:
-
-            return frame, url
-
-        errors.append(
-            f"{url}: {error}"
-        )
-
-    raise ValueError(
-        "Combined cash scope not verified: "
-        + " | ".join(errors)
-    )
-
-
-# =====================================
-# NSE JSON CASH DATA
-# SEPARATE UNVERIFIED STORAGE
+# NSE CASH API
+# OPTIONAL SUPPORTING DATA
 # =====================================
 
 def fetch_cash_candidate(day):
 
     hosts = [
+
         "https://www.nseindia.com",
+
         "https://www.nseindia.in"
+
     ]
 
     def attempt(host):
@@ -739,13 +816,21 @@ def fetch_cash_candidate(day):
         try:
 
             response = requests.get(
+
                 url,
+
                 headers={
+
                     **HEADERS,
+
                     "Accept": "application/json",
+
                     "Referer": host + "/"
+
                 },
+
                 timeout=(5, 12)
+
             )
 
             response.raise_for_status()
@@ -763,17 +848,26 @@ def fetch_cash_candidate(day):
             for item in payload:
 
                 rows.append({
-                    "Report Date": item["date"],
-                    "Category": item["category"],
-                    "Buy Cr": item["buyValue"],
-                    "Sell Cr": item["sellValue"],
-                    "Net Cr": item["netValue"]
+
+                    "Report Date":
+                        item["date"],
+
+                    "Category":
+                        item["category"],
+
+                    "Buy Cr":
+                        item["buyValue"],
+
+                    "Sell Cr":
+                        item["sellValue"],
+
+                    "Net Cr":
+                        item["netValue"]
+
                 })
 
             frame = validate_cash(
-                rows,
-                day,
-                "UNVERIFIED_EXCHANGE_SCOPE"
+                rows, day
             )
 
             frame["Source URL"] = url
@@ -782,50 +876,88 @@ def fetch_cash_candidate(day):
 
         except Exception as error:
 
-            return None, url, None, str(error)
+            return (
+
+                None,
+
+                url,
+
+                None,
+
+                str(error)
+
+            )
 
     with ThreadPoolExecutor(
+
         max_workers=2
+
     ) as executor:
 
         results = list(
-            executor.map(attempt, hosts)
+
+            executor.map(
+                attempt, hosts
+            )
+
         )
 
     valid = [
+
         item for item in results
+
         if item[0] is not None
+
     ]
 
     if not valid:
 
         raise ValueError(
+
             "NSE cash API unavailable: "
+
             + " | ".join(
+
                 f"{item[1]}: {item[3]}"
+
                 for item in results
+
             )
+
         )
 
     columns = [
+
         "Category",
+
         "Buy Cr",
+
         "Sell Cr",
+
         "Net Cr"
+
     ]
 
     reference = (
+
         valid[0][0][columns]
+
         .sort_values("Category")
+
         .reset_index(drop=True)
+
     )
 
     for item in valid[1:]:
 
         other = (
+
             item[0][columns]
+
             .sort_values("Category")
+
             .reset_index(drop=True)
+
         )
 
         if not reference.equals(other):
@@ -839,27 +971,36 @@ def fetch_cash_candidate(day):
     frame["Matching API Hosts"] = len(valid)
 
     save_json(
-        DATA
-        / "logs"
-        / str(day)
-        / "cash_json_candidate.json",
-        {
-            "version": VERSION,
-            "source": url,
-            "date": str(day),
-            "status": "SCOPE_UNVERIFIED",
-            "eligible_for_analysis": False,
-            "matching_hosts": len(valid),
-            "raw_payload": payload,
-            "records": frame.to_dict("records")
-        }
-    )
 
-    print(
-        "NSE cash data received; "
-        "date and numeric validation passed; "
-        "exchange scope remains unverified.",
-        flush=True
+        DATA
+
+        / "logs"
+
+        / str(day)
+
+        / "cash_json_candidate.json",
+
+        {
+
+            "version": VERSION,
+
+            "source": url,
+
+            "date": str(day),
+
+            "status": "SCOPE_UNVERIFIED",
+
+            "eligible_for_analysis": False,
+
+            "matching_hosts": len(valid),
+
+            "raw_payload": payload,
+
+            "records":
+                frame.to_dict("records")
+
+        }
+
     )
 
     return frame, url
@@ -871,25 +1012,88 @@ def fetch_cash_candidate(day):
 
 def safe_collect(source, day, fetcher):
 
+    captured = {}
+
+    def wrapped(requested):
+
+        frame, url = fetcher(requested)
+
+        captured["validation_status"] = (
+
+            sorted(
+
+                frame["Validation Status"]
+
+                .astype(str)
+
+                .unique()
+
+                .tolist()
+
+            )
+
+        )
+
+        captured["eligible_for_analysis"] = (
+
+            bool(
+
+                frame[
+                    "Eligible For Analysis"
+                ].all()
+
+            )
+
+        )
+
+        if "Validation Warning" in frame.columns:
+
+            captured["validation_warnings"] = (
+
+                frame[
+                    "Validation Warning"
+                ].iloc[0]
+
+            )
+
+        return frame, url
+
     try:
 
         result = collect_source(
+
             source,
+
             day,
-            fetcher
+
+            wrapped
+
         )
+
+        if result.get("status") in SUCCESS:
+
+            result.update(captured)
 
         return result
 
     except Exception as error:
 
         return {
+
             "source": source,
+
             "status": "FAILED",
+
             "records": None,
+
             "requested_date": str(day),
+
             "actual_date": None,
+
+            "eligible_for_analysis": False,
+
             "error": str(error)
+
         }
 
 
@@ -903,12 +1107,17 @@ def main():
 
     results = []
 
+    trading_days = []
+
     print(
+
         f"Institutional Engine V{VERSION}",
+
         flush=True
+
     )
 
-    trading_days = []
+    # Last seven calendar days.
 
     for offset in range(7):
 
@@ -917,14 +1126,21 @@ def main():
         )
 
         if (
+
             day.weekday() >= 5
+
             or day in HOLIDAYS
+
         ):
 
             print(
+
                 day,
+
                 "MARKET CLOSED",
+
                 flush=True
+
             )
 
             continue
@@ -932,9 +1148,13 @@ def main():
         trading_days.append(day)
 
         result = safe_collect(
+
             "participant_oi",
+
             day,
+
             fetch_participant_oi
+
         )
 
         results.append(result)
@@ -942,38 +1162,39 @@ def main():
         print(result, flush=True)
 
     latest_day = (
+
         trading_days[0]
+
         if trading_days
+
         else None
+
     )
+
+    # FII DII is optional.
+    # No BSE or MSEI dependency.
 
     if latest_day:
 
-        result = safe_collect(
-            "fii_dii",
+        candidate = safe_collect(
+
+            "fii_dii_unverified",
+
             latest_day,
-            fetch_fii_dii
+
+            fetch_cash_candidate
+
         )
 
-        results.append(result)
+        candidate["scope_verified"] = False
 
-        print(result, flush=True)
+        candidate["eligible_for_analysis"] = False
 
-        if result["status"] not in SUCCESS:
+        candidate["optional_source"] = True
 
-            candidate = safe_collect(
-                "fii_dii_unverified",
-                latest_day,
-                fetch_cash_candidate
-            )
+        results.append(candidate)
 
-            candidate["scope_verified"] = False
-
-            candidate["eligible_for_analysis"] = False
-
-            results.append(candidate)
-
-            print(candidate, flush=True)
+        print(candidate, flush=True)
 
     successful = sorted({
 
@@ -985,22 +1206,13 @@ def main():
 
     })
 
-    expected = {
-        "participant_oi",
-        "fii_dii"
-    }
+    latest_oi = next(
 
-    missing = sorted(
-        expected - set(successful)
-    )
+        (
 
-    latest_missing = []
+            r for r in results
 
-    for source in expected:
-
-        found = any(
-
-            r["source"] == source
+            if r["source"] == "participant_oi"
 
             and r["status"] in SUCCESS
 
@@ -1008,31 +1220,68 @@ def main():
                 r.get("actual_date")
             ) == str(latest_day)
 
-            for r in results
+        ),
 
-        )
+        None
 
-        if not found:
-
-            latest_missing.append(source)
-
-    candidate_available = (
-        "fii_dii_unverified" in successful
     )
 
     latest_oi_available = (
-        "participant_oi" not in latest_missing
+        latest_oi is not None
     )
 
-    combined_available = (
-        "fii_dii" not in latest_missing
+    latest_oi_eligible = (
+
+        latest_oi_available
+
+        and latest_oi.get(
+            "eligible_for_analysis",
+            False
+        )
+
     )
 
-    if latest_oi_available and combined_available:
+    candidate_available = any(
+
+        r["source"] == "fii_dii_unverified"
+
+        and r["status"] in SUCCESS
+
+        and str(
+            r.get("actual_date")
+        ) == str(latest_day)
+
+        for r in results
+
+    )
+
+    historical_failures = [
+
+        r for r in results
+
+        if r["source"] == "participant_oi"
+
+        and r["status"] == "FAILED"
+
+    ]
+
+    if (
+
+        latest_oi_eligible
+
+        and not historical_failures
+
+    ):
 
         overall = "COMPLETE"
 
-    elif latest_oi_available or candidate_available:
+    elif (
+
+        latest_oi_available
+
+        or "participant_oi" in successful
+
+    ):
 
         overall = "PARTIAL"
 
@@ -1040,7 +1289,28 @@ def main():
 
         overall = "FAILED"
 
+    missing = (
+
+        []
+
+        if "participant_oi" in successful
+
+        else ["participant_oi"]
+
+    )
+
+    latest_missing = (
+
+        []
+
+        if latest_oi_available
+
+        else ["participant_oi"]
+
+    )
+
     summary = {
+
         "version": VERSION,
 
         "collection_time":
@@ -1052,6 +1322,18 @@ def main():
         "overall_status":
             overall,
 
+        "required_sources": [
+
+            "participant_oi"
+
+        ],
+
+        "optional_sources": [
+
+            "fii_dii_unverified"
+
+        ],
+
         "successful_sources":
             successful,
 
@@ -1059,39 +1341,66 @@ def main():
             missing,
 
         "latest_missing_sources":
-            sorted(latest_missing),
+            latest_missing,
 
         "participant_oi_latest_available":
             latest_oi_available,
 
+        "participant_oi_latest_eligible":
+            bool(latest_oi_eligible),
+
+        "combined_cash_required":
+            False,
+
         "combined_cash_verified":
-            combined_available,
+            False,
 
         "unverified_cash_available":
             candidate_available,
 
+        "cash_eligible_for_analysis":
+            False,
+
+        "historical_oi_failed_attempts":
+            len(historical_failures),
+
         "failed_attempts": sum(
+
             r["status"] == "FAILED"
+
             for r in results
+
         ),
 
         "results":
             results
+
     }
 
     save_json(
-        DATA /
-        "latest_institutional_collection.json",
+
+        DATA
+
+        / "latest_institutional_collection.json",
+
         summary
+
     )
 
     print(
+
         json.dumps(
+
             summary,
+
             indent=2,
+
             default=str
+
         ),
+
         flush=True
+
     )
 
     if overall == "FAILED":
