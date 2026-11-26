@@ -1,0 +1,1349 @@
+{
+  "Version": "2.5.1",
+  "Universe": 218,
+  "Attempted Stocks": 218,
+  "Unattempted Stocks": 0,
+  "Requested Sessions": [
+    "2026-10-28",
+    "2026-10-29",
+    "2026-10-30",
+    "2026-11-02",
+    "2026-11-03",
+    "2026-11-04",
+    "2026-11-05",
+    "2026-11-06",
+    "2026-11-09",
+    "2026-11-11",
+    "2026-11-12",
+    "2026-11-13",
+    "2026-11-16",
+    "2026-11-17",
+    "2026-11-18",
+    "2026-11-19",
+    "2026-11-20",
+    "2026-11-23",
+    "2026-11-25",
+    "2026-11-26"
+  ],
+  "Baseline Ready Stocks": 218,
+  "Minimum Required Sessions": 5,
+  "Coverage %": 100.0,
+  "Turnover Type": "ESTIMATED FROM MINUTE OHLC",
+  "Started At": "2026-11-27T01:21:47.183779+05:30",
+  "Completed At": "2026-11-27T01:33:51.075047+05:30",
+  "Independent NSE Cross Check": false,
+  "Status": "COMPLETE",
+  "Errors": [],
+  "Stock Coverage": [
+    {
+      "Symbol": "360ONE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ABB",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ABCAPITAL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ACUTAAS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ADANIENSOL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ADANIENT",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ADANIGREEN",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ADANIPORTS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ADANIPOWER",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ALKEM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "AMBER",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "AMBUJACEM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ANANDRATHI",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ANGELONE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "APARINDS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "APLAPOLLO",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "APOLLOHOSP",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ASHOKLEY",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ASIANPAINT",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ASTRAL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ATHERENERG",
+      "Candles Received": 7195,
+      "Valid Sessions": 12,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "AUBANK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "AUROPHARMA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "AXISBANK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BAJAJ-AUTO",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BAJAJFINSV",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BAJFINANCE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BANDHANBNK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BANKBARODA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BANKINDIA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BDL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BEL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BHARATFORG",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BHARTIARTL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BHEL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BIOCON",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BLUESTARCO",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BOSCHLTD",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BPCL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BRITANNIA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "BSE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "CAMS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "CANBK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "CDSL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "CGPOWER",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "CHOLAFIN",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "CIPLA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "COALINDIA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "COCHINSHIP",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "COFORGE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "COLPAL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "CONCOR",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "COROMANDEL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "CROMPTON",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "CUB",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "CUMMINSIND",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "DABUR",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "DATAPATTNS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "DELHIVERY",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "DIVISLAB",
+      "Candles Received": 7195,
+      "Valid Sessions": 12,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "DIXON",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "DLF",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "DMART",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "DRREDDY",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "EICHERMOT",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ENRIN",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ETERNAL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "FEDERALBNK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "FORCEMOT",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "FORTIS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "GAIL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "GLENMARK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "GMRAIRPORT",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "GODFRYPHLP",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "GODREJCP",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "GODREJPROP",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "GRASIM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "GVT&D",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HAL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HAVELLS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HCLTECH",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HDFCAMC",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HDFCBANK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HDFCLIFE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HEROMOTOCO",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HINDALCO",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HINDPETRO",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HINDUNILVR",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HINDZINC",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "HYUNDAI",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ICICIBANK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ICICIGI",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ICICILIFE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "IDEA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "IDFCFIRSTB",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "INDHOTEL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "INDIANB",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "INDIGO",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "INDUSINDBK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "INDUSTOWER",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "INFY",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "INOXWIND",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "IOC",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "IRFC",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ITC",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "JINDALSTEL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "JIOFIN",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "JSWENERGY",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "JSWSTEEL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "JUBLFOOD",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "KALYANKJIL",
+      "Candles Received": 7195,
+      "Valid Sessions": 12,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "KARURVYSYA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "KAYNES",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "KEI",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "KFINTECH",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "KOTAKBANK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "KPITTECH",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "LAURUSLABS",
+      "Candles Received": 7195,
+      "Valid Sessions": 12,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "LICHSGFIN",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "LICI",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "LODHA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "LT",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "LTF",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "LTM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "LUPIN",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "M&M",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MAHABANK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MANAPPURAM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MANKIND",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MARICO",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MARUTI",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MAXHEALTH",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MAZDOCK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MCX",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MFSL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MOTHERSON",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MOTILALOFS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MPHASIS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "MUTHOOTFIN",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "NAM-INDIA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "NATIONALUM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "NAUKRI",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "NAVINFLUOR",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "NBCC",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "NESTLEIND",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "NHPC",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "NMDC",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "NTPC",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "NYKAA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "OBEROIRLTY",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "OFSS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "OIL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ONGC",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PAGEIND",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PATANJALI",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PAYTM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PERSISTENT",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PETRONET",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PFC",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PGEL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PHOENIXLTD",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PIDILITIND",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PIIND",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PNB",
+      "Candles Received": 7195,
+      "Valid Sessions": 12,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PNBHOUSING",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "POLICYBZR",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "POLYCAB",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "POWERGRID",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "POWERINDIA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PREMIERENE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "PRESTIGE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "RADICO",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "RBLBANK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "RECLTD",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "RELIANCE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "RVNL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SAGILITY",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SAIL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SBICARD",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SBILIFE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SBIN",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SHREECEM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SHRIRAMFIN",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SIEMENS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SOLARINDS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SONACOMS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SRF",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SUNPHARMA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SUPREMEIND",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SUZLON",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SWIGGY",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "SYRMA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TATACONSUM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TATAELXSI",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TATAPOWER",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TATASTEEL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TCS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TECHM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TIINDIA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TITAN",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TMPV",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TORNTPHARM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TRENT",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "TVSMOTOR",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "UJJIVANSFB",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ULTRACEMCO",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "UNIONBANK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "UNITDSPR",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "UNOMINDA",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "UPL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "VBL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "VEDL",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "VMM",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "VOLTAS",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "WAAREEENER",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "WIPRO",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "YESBANK",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    },
+    {
+      "Symbol": "ZYDUSLIFE",
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
+      "Baseline Ready": true
+    }
+  ],
+  "Archive SHA256": "2dd29c30d0d195a3f7cbc8b36cf0d5e33baf690fde6a436757031559a4b5111a",
+  "Archive Path": "/home/runner/work/FO-STOCK-IDENTIFICATION/FO-STOCK-IDENTIFICATION/historical_data/stock_intelligence/intraday_baseline/2026-11-26/baseline.json.gz"
+}
