@@ -1,34 +1,39 @@
 {
-  "version": "1.5.1",
-  "collection_time": "2026-11-26T20:43:01.000572+05:30",
+  "version": "1.5.2",
+  "collection_time": "2026-11-26T20:51:12.156986+05:30",
+  "latest_expected_date": "2026-11-26",
   "successful_sources": [
     "participant_oi"
   ],
   "missing_sources": [
     "fii_dii"
   ],
+  "latest_missing_sources": [
+    "participant_oi",
+    "fii_dii"
+  ],
+  "failed_attempts": 4,
   "results": [
     {
       "source": "participant_oi",
-      "status": "SAVED",
-      "records": 4,
-      "actual_date": "2026-11-26",
-      "sha256": "459bc4a4bdd5b7767b2a47eaf7b47144e1d273d7327833e0a8d73b9d5d3f85f4",
-      "error": ""
+      "status": "FAILED",
+      "records": null,
+      "requested_date": "2026-11-26",
+      "error": "Official column total mismatch: Index Put Long; calculated=4638143; official=4638142"
     },
     {
       "source": "participant_oi",
       "status": "FAILED",
       "records": null,
       "requested_date": "2026-11-25",
-      "error": "OI totals mismatch: Index Call"
+      "error": "Official column total mismatch: Index Call Long; calculated=3764976; official=3764977"
     },
     {
       "source": "participant_oi",
       "status": "SAVED",
       "records": 4,
       "actual_date": "2026-11-23",
-      "sha256": "5f87ef936399d3393a8a72b50e897669ed8e7fe3674c7fe1eb363be237352d9a",
+      "sha256": "c5f310e6e00b89afe98e4612b0a5f3b1426d0c1d82d69a54a0f11285bcfff6e6",
       "error": ""
     },
     {
@@ -36,14 +41,14 @@
       "status": "FAILED",
       "records": null,
       "requested_date": "2026-11-20",
-      "error": "OI totals mismatch: Index Put"
+      "error": "Official column total mismatch: Index Put Short; calculated=7144282; official=7144281"
     },
     {
       "source": "fii_dii",
       "status": "FAILED",
       "records": null,
       "requested_date": "2026-11-26",
-      "error": "Official cash report unavailable: https://www.nseindia.in: Expected NSE exclusive and combined market tables | https://nseindia.in: Expected NSE exclusive and combined market tables | https://www.nse.in: Expected NSE exclusive and combined market tables"
+      "error": "Official combined cash report unavailable: https://www.nseindia.in/reports/fii-dii: Combined cash tables not found | https://nseindia.in/reports/fii-dii: Combined cash tables not found | https://www.nseindia.com/reports/fii-dii: Combined cash tables not found | https://beta.msei.in/downloads/equity-reports/fii-dii-activities: HTTPSConnectionPool(host='beta.msei.in', port=443): Max retries exceeded with url: /downloads/equity-reports/fii-dii-activities (Caused by ConnectTimeoutError(<HTTPSConnection(host='beta.msei.in', port=443) at 0x75b131f59b50>, 'Connection to beta.msei.in timed out. (connect timeout=10)')) | https://beta.mseindia.com/markets/markets-information/fii-dii-trading-activities: HTTPSConnectionPool(host='beta.mseindia.com', port=443): Max retries exceeded with url: /markets/markets-information/fii-dii-trading-activities (Caused by ConnectTimeoutError(<HTTPSConnection(host='beta.mseindia.com', port=443) at 0x75b131f52590>, 'Connection to beta.mseindia.com timed out. (connect timeout=10)')) | https://www.nseindia.com/api/fiidiiTradeReact: valid data but exchange scope unverified | https://www.nseindia.in/api/fiidiiTradeReact: valid data but exchange scope unverified"
     }
   ]
 }

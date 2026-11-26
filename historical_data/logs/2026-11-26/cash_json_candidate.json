@@ -1,0 +1,25 @@
+{
+  "source": "https://www.nseindia.in/api/fiidiiTradeReact",
+  "date": "2026-11-26",
+  "status": "SCOPE_UNVERIFIED",
+  "records": [
+    {
+      "Report Date": "2026-11-26",
+      "Category": "DII",
+      "Buy Cr": 24352.87,
+      "Sell Cr": 18722.15,
+      "Net Cr": 5630.72,
+      "Market Scope": "UNVERIFIED_EXCHANGE_SCOPE",
+      "Validation Status": "VERIFIED"
+    },
+    {
+      "Report Date": "2026-11-26",
+      "Category": "FII/FPI",
+      "Buy Cr": 17879.74,
+      "Sell Cr": 12036.41,
+      "Net Cr": 5843.33,
+      "Market Scope": "UNVERIFIED_EXCHANGE_SCOPE",
+      "Validation Status": "VERIFIED"
+    }
+  ]
+}
