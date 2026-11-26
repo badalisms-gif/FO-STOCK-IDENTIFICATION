@@ -1,21 +1,23 @@
 
 import io
 import re
+import json
+import math
 import requests
 import pandas as pd
 
 from datetime import datetime, date, timedelta
+from lxml import html
 
 from daily_collector import DATA, now, save_json
 
 from futures_intelligence_engine import (
     download,
-    numeric,
     normalize,
     collect_source
 )
 
-VERSION = "1.5.1"
+VERSION = "1.5.2"
 
 ARCHIVE = "https://nsearchives.nseindia.com"
 
@@ -28,104 +30,146 @@ HEADERS = {
     "Accept": "*/*"
 }
 
+CATEGORIES = {"FII", "DII", "CLIENT", "PRO"}
+
+MAPPING = {
+    "futureindexlong": "Index Futures Long",
+    "futureindexshort": "Index Futures Short",
+    "futurestocklong": "Stock Futures Long",
+    "futurestockshort": "Stock Futures Short",
+    "optionindexcalllong": "Index Call Long",
+    "optionindexcallshort": "Index Call Short",
+    "optionindexputlong": "Index Put Long",
+    "optionindexputshort": "Index Put Short",
+    "optionstockcalllong": "Stock Call Long",
+    "optionstockcallshort": "Stock Call Short",
+    "optionstockputlong": "Stock Put Long",
+    "optionstockputshort": "Stock Put Short"
+}
+
 
 # =====================================
-# PARTICIPANT REPORT DATE VALIDATION
+# DATE VALIDATION
 # =====================================
+
+def parse_date(value):
+
+    value = str(value).strip()
+    value = value.replace("Sept", "Sep")
+
+    formats = [
+        "%Y-%m-%d",
+        "%d-%m-%Y",
+        "%d/%m/%Y",
+        "%d%m%Y",
+        "%Y%m%d",
+        "%d-%b-%Y",
+        "%d-%B-%Y",
+        "%d-%b-%y",
+        "%d %b %Y",
+        "%d %B %Y",
+        "%d %b %y",
+        "%d/%b/%Y",
+        "%b %d, %Y",
+        "%B %d, %Y",
+        "%b %d %Y",
+        "%B %d %Y"
+    ]
+
+    for fmt in formats:
+        try:
+            return datetime.strptime(
+                value, fmt
+            ).date()
+        except ValueError:
+            pass
+
+    raise ValueError(
+        f"Invalid date: {value}"
+    )
+
 
 def verify_date(title, day):
 
     patterns = [
-        (
-            r"\b\d{1,2}[-/]\d{1,2}[-/]\d{4}\b",
-            ["%d-%m-%Y", "%d/%m/%Y"]
-        ),
-        (
-            r"\b\d{4}-\d{2}-\d{2}\b",
-            ["%Y-%m-%d"]
-        ),
-        (
-            r"\b\d{8}\b",
-            ["%d%m%Y", "%Y%m%d"]
-        ),
-        (
-            r"\b\d{1,2}[- /][A-Za-z]{3,9}[- /]\d{2,4}\b",
-            [
-                "%d-%b-%Y",
-                "%d-%B-%Y",
-                "%d %b %Y",
-                "%d %B %Y",
-                "%d/%b/%Y",
-                "%d-%b-%y",
-                "%d %b %y"
-            ]
-        ),
-        (
-            r"\b[A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4}\b",
-            [
-                "%b %d, %Y",
-                "%B %d, %Y",
-                "%b %d %Y",
-                "%B %d %Y"
-            ]
-        )
+        r"\b\d{4}-\d{2}-\d{2}\b",
+        r"\b\d{1,2}[-/]\d{1,2}[-/]\d{4}\b",
+        r"\b\d{8}\b",
+        r"\b\d{1,2}[- /][A-Za-z]{3,9}[- /]\d{2,4}\b",
+        r"\b[A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4}\b"
     ]
 
     detected = set()
 
-    for pattern, formats in patterns:
+    for pattern in patterns:
 
         for token in re.findall(pattern, title):
 
-            for fmt in formats:
-
-                try:
-
-                    detected.add(
-                        datetime.strptime(
-                            token, fmt
-                        ).date()
-                    )
-
-                except ValueError:
-                    pass
+            try:
+                detected.add(parse_date(token))
+            except ValueError:
+                pass
 
     if day not in detected:
 
         raise ValueError(
-            f"Report date unmatched. "
-            f"Expected={day}; "
-            f"Header={title[:300]}"
+            f"Report date unmatched: "
+            f"{day}; header={title[:300]}"
         )
 
 
 # =====================================
-# PARTICIPANT WISE OI
+# STRICT NUMERIC VALIDATION
+# =====================================
+
+def strict_numeric(series):
+
+    values = pd.to_numeric(
+        series.astype(str)
+        .str.replace(",", "", regex=False)
+        .str.strip(),
+        errors="coerce"
+    )
+
+    if values.isna().any():
+
+        raise ValueError(
+            "Missing or invalid numeric value"
+        )
+
+    if not values.map(math.isfinite).all():
+
+        raise ValueError(
+            "Non-finite numeric value"
+        )
+
+    return values
+
+
+# =====================================
+# PARTICIPANT OI
 # =====================================
 
 def fetch_participant_oi(day):
 
-    code = day.strftime("%d%m%Y")
-
     url = (
         f"{ARCHIVE}/content/nsccl/"
-        f"fao_participant_oi_{code}.csv"
+        f"fao_participant_oi_"
+        f"{day.strftime('%d%m%Y')}.csv"
     )
 
     raw = download(url)
-
     text = raw.decode("utf-8-sig")
 
     lines = text.splitlines()
 
-    header = None
-
-    for index, line in enumerate(lines):
-
-        if "clienttype" in normalize(line):
-
-            header = index
-            break
+    header = next(
+        (
+            i for i, line in enumerate(lines)
+            if "clienttype" in normalize(line)
+        ),
+        None
+    )
 
     if header is None:
 
@@ -140,13 +184,10 @@ def fetch_participant_oi(day):
     verify_date(title, day)
 
     frame = pd.read_csv(
-
         io.StringIO(text),
-
         skiprows=header,
-
-        index_col=False
-
+        index_col=False,
+        dtype=str
     )
 
     frame.columns = [
@@ -155,172 +196,190 @@ def fetch_participant_oi(day):
     ]
 
     required = {
-
         "clienttype",
-        "futureindexlong",
-        "futureindexshort",
-        "futurestocklong",
-        "futurestockshort"
-
+        *MAPPING.keys()
     }
 
     if not required <= set(frame.columns):
 
         raise ValueError(
-            f"Missing columns: "
+            f"Missing fields: "
             f"{required - set(frame.columns)}"
         )
 
     frame["clienttype"] = (
-
         frame["clienttype"]
-        .astype(str)
+        .fillna("")
         .str.strip()
         .str.upper()
-
     )
 
-    categories = {
-        "FII", "DII", "CLIENT", "PRO"
-    }
+    totals = frame[
+        frame["clienttype"].isin(
+            ["TOTAL", "TOTALS", "GRAND TOTAL"]
+        )
+    ].copy()
 
-    frame = frame[
-        frame["clienttype"].isin(categories)
+    if len(totals) != 1:
+
+        raise ValueError(
+            "Official TOTAL row missing or duplicated"
+        )
+
+    participants = frame[
+        frame["clienttype"].isin(CATEGORIES)
     ].copy()
 
     if (
-        len(frame) != 4
-        or set(frame["clienttype"]) != categories
+        len(participants) != 4
+        or set(participants["clienttype"]) != CATEGORIES
     ):
 
         raise ValueError(
             "Participant categories incomplete"
         )
 
+    participants = participants.reset_index(
+        drop=True
+    )
+
     result = pd.DataFrame({
-
         "Report Date": str(day),
-
-        "Participant": frame["clienttype"]
-
+        "Participant": participants["clienttype"]
     })
 
-    mapping = {
+    official_totals = {}
 
-        "futureindexlong":
-            "Index Futures Long",
+    for original, output in MAPPING.items():
 
-        "futureindexshort":
-            "Index Futures Short",
-
-        "futurestocklong":
-            "Stock Futures Long",
-
-        "futurestockshort":
-            "Stock Futures Short",
-
-        "optionindexcalllong":
-            "Index Call Long",
-
-        "optionindexcallshort":
-            "Index Call Short",
-
-        "optionindexputlong":
-            "Index Put Long",
-
-        "optionindexputshort":
-            "Index Put Short",
-
-        "optionstockcalllong":
-            "Stock Call Long",
-
-        "optionstockcallshort":
-            "Stock Call Short",
-
-        "optionstockputlong":
-            "Stock Put Long",
-
-        "optionstockputshort":
-            "Stock Put Short"
-
-    }
-
-    for original, output in mapping.items():
-
-        if original not in frame.columns:
-
-            raise ValueError(
-                f"Missing field: {original}"
-            )
-
-        result[output] = numeric(
-            frame[original]
+        values = strict_numeric(
+            participants[original]
         )
 
-        if (result[output] < 0).any():
+        official = strict_numeric(
+            totals[original]
+        ).iloc[0]
+
+        if (
+            (values < 0).any()
+            or official < 0
+        ):
 
             raise ValueError(
                 f"Negative OI: {output}"
             )
 
-    for segment in [
+        if (
+            (values % 1 != 0).any()
+            or official % 1 != 0
+        ):
+
+            raise ValueError(
+                f"Non-integer OI: {output}"
+            )
+
+        calculated = int(values.sum())
+        official = int(official)
+
+        if calculated != official:
+
+            raise ValueError(
+                f"Official column total mismatch: "
+                f"{output}; calculated={calculated}; "
+                f"official={official}"
+            )
+
+        result[output] = values.astype("int64")
+
+        official_totals[output] = official
+
+    segments = [
         "Index Futures",
         "Stock Futures",
         "Index Call",
         "Index Put",
         "Stock Call",
         "Stock Put"
-    ]:
+    ]
 
-        long_total = result[
+    warnings = []
+
+    for segment in segments:
+
+        long_total = official_totals[
             segment + " Long"
-        ].sum()
+        ]
 
-        short_total = result[
+        short_total = official_totals[
             segment + " Short"
-        ].sum()
+        ]
 
-        if long_total != short_total:
+        difference = long_total - short_total
 
-            raise ValueError(
-                f"OI totals mismatch: {segment}"
-            )
+        result[
+            segment + " Market Imbalance"
+        ] = difference
+
+        if difference != 0:
+
+            warnings.append({
+                "segment": segment,
+                "official_long": long_total,
+                "official_short": short_total,
+                "difference": difference
+            })
 
     result["Net Index Futures"] = (
-
         result["Index Futures Long"]
-
         - result["Index Futures Short"]
-
     )
 
     result["Net Stock Futures"] = (
-
         result["Stock Futures Long"]
-
         - result["Stock Futures Short"]
-
     )
+
+    result["Column Totals Verified"] = True
+
+    result["Market Balance Verified"] = (
+        len(warnings) == 0
+    )
+
+    result["Validation Status"] = (
+        "VERIFIED_WITH_WARNING"
+        if warnings
+        else "VERIFIED"
+    )
+
+    result["Validation Warning"] = json.dumps(
+        warnings,
+        ensure_ascii=False
+    )
+
+    if warnings:
+
+        print(
+            "Official report imbalance:",
+            json.dumps(warnings)
+        )
 
     return result, url
 
 
 # =====================================
-# FII DII VALIDATION
+# FII DII CASH VALIDATION
 # =====================================
 
-def validate_cash(rows, day):
+def validate_cash(rows, day, scope):
 
     frame = pd.DataFrame(rows)
 
     required = {
-
         "Report Date",
         "Category",
         "Buy Cr",
         "Sell Cr",
         "Net Cr"
-
     }
 
     if not required <= set(frame.columns):
@@ -329,6 +388,16 @@ def validate_cash(rows, day):
             "FII DII columns incomplete"
         )
 
+    frame = frame[
+        [
+            "Report Date",
+            "Category",
+            "Buy Cr",
+            "Sell Cr",
+            "Net Cr"
+        ]
+    ].copy()
+
     if len(frame) != 2:
 
         raise ValueError(
@@ -336,44 +405,34 @@ def validate_cash(rows, day):
         )
 
     frame["Category"] = (
-
         frame["Category"]
         .astype(str)
         .str.strip()
         .str.upper()
         .replace({
-
             "FII": "FII/FPI",
-            "FPI": "FII/FPI"
-
+            "FPI": "FII/FPI",
+            "FII / FPI": "FII/FPI"
         })
-
     )
 
     if set(frame["Category"]) != {
-
         "FII/FPI", "DII"
-
     }:
 
         raise ValueError(
-            "Unexpected category"
+            "Unexpected participant category"
         )
 
-    dates = pd.to_datetime(
+    dates = frame[
+        "Report Date"
+    ].map(parse_date)
 
-        frame["Report Date"],
-
-        dayfirst=True,
-
-        errors="raise"
-
-    )
-
-    if not dates.dt.date.eq(day).all():
+    if not dates.eq(day).all():
 
         raise ValueError(
-            f"Stale report: {dates.tolist()}"
+            f"Stale cash report: "
+            f"{dates.tolist()}; expected={day}"
         )
 
     frame["Report Date"] = str(day)
@@ -384,7 +443,7 @@ def validate_cash(rows, day):
         "Net Cr"
     ]:
 
-        frame[column] = numeric(
+        frame[column] = strict_numeric(
             frame[column]
         )
 
@@ -393,166 +452,344 @@ def validate_cash(rows, day):
     ).any().any():
 
         raise ValueError(
-            "Negative trade values"
+            "Negative cash trade value"
         )
 
     difference = (
-
         frame["Buy Cr"]
-
         - frame["Sell Cr"]
-
         - frame["Net Cr"]
-
     ).abs()
 
     if (difference > 0.05).any():
 
         raise ValueError(
-            "Net cash value mismatch"
+            "Cash net value mismatch"
         )
 
-    frame["Market Scope"] = (
-        "NSE+BSE+MSEI"
-    )
+    frame["Market Scope"] = scope
+    frame["Validation Status"] = "VERIFIED"
 
     return frame
 
 
 # =====================================
-# OFFICIAL NSE CASH REPORT
+# CASH TABLE NORMALIZATION
+# =====================================
+
+def normalize_cash_table(table):
+
+    table = table.copy()
+
+    if isinstance(
+        table.columns,
+        pd.MultiIndex
+    ):
+
+        table.columns = [
+            " ".join(map(str, col))
+            for col in table.columns
+        ]
+
+    mapping = {}
+
+    for col in table.columns:
+
+        key = normalize(col)
+
+        if "category" in key:
+
+            mapping[col] = "Category"
+
+        elif "date" in key:
+
+            mapping[col] = "Report Date"
+
+        elif "buyvalue" in key:
+
+            mapping[col] = "Buy Cr"
+
+        elif "sellvalue" in key:
+
+            mapping[col] = "Sell Cr"
+
+        elif "netvalue" in key:
+
+            mapping[col] = "Net Cr"
+
+    table = table.rename(
+        columns=mapping
+    )
+
+    required = {
+        "Category",
+        "Report Date",
+        "Buy Cr",
+        "Sell Cr",
+        "Net Cr"
+    }
+
+    if not required <= set(table.columns):
+
+        return None
+
+    table["Category"] = (
+        table["Category"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+    )
+
+    table = table[
+        table["Category"].isin([
+            "FII",
+            "FPI",
+            "FII/FPI",
+            "FII / FPI",
+            "DII"
+        ])
+    ].copy()
+
+    return table
+
+
+# =====================================
+# FIND COMBINED MARKET TABLES
+# =====================================
+
+def combined_cash_tables(content, day, mse=False):
+
+    document = html.fromstring(content)
+
+    all_frames = []
+
+    for element in document.xpath("//table"):
+
+        heading = element.xpath(
+            "preceding::*["
+            "self::h1 or self::h2 or "
+            "self::h3 or self::h4 or "
+            "self::h5 or self::h6"
+            "][1]"
+        )
+
+        context = ""
+
+        if heading:
+
+            context = heading[0].text_content()
+
+        context += " " + " ".join(
+            element.xpath(".//caption//text()")
+        )
+
+        context = context.upper()
+
+        combined = all(
+            token in context
+            for token in ["NSE", "BSE", "MSE"]
+        )
+
+        if not combined and not mse:
+
+            continue
+
+        tables = pd.read_html(
+            io.StringIO(
+                html.tostring(
+                    element,
+                    encoding="unicode"
+                )
+            )
+        )
+
+        for table in tables:
+
+            normalized = normalize_cash_table(
+                table
+            )
+
+            if normalized is not None:
+
+                if not normalized.empty:
+
+                    all_frames.append(normalized)
+
+    if not all_frames:
+
+        raise ValueError(
+            "Combined cash tables not found"
+        )
+
+    merged = pd.concat(
+        all_frames,
+        ignore_index=True
+    ).drop_duplicates()
+
+    required = [
+        "Report Date",
+        "Category",
+        "Buy Cr",
+        "Sell Cr",
+        "Net Cr"
+    ]
+
+    merged = merged[
+        required
+    ].drop_duplicates()
+
+    return validate_cash(
+        merged.to_dict("records"),
+        day,
+        "NSE+BSE+MSEI"
+    )
+
+
+# =====================================
+# OFFICIAL CASH DATA SOURCES
 # =====================================
 
 def fetch_fii_dii(day):
 
     errors = []
 
-    for host in [
-
-        "https://www.nseindia.in",
-
-        "https://nseindia.in",
-
-        "https://www.nse.in"
-
-    ]:
-
-        url = (
-            host + "/reports/fii-dii"
+    sources = [
+        (
+            "https://www.nseindia.in/reports/fii-dii",
+            False
+        ),
+        (
+            "https://nseindia.in/reports/fii-dii",
+            False
+        ),
+        (
+            "https://www.nseindia.com/reports/fii-dii",
+            False
+        ),
+        (
+            "https://beta.msei.in/downloads/"
+            "equity-reports/fii-dii-activities",
+            True
+        ),
+        (
+            "https://beta.mseindia.com/markets/"
+            "markets-information/"
+            "fii-dii-trading-activities",
+            True
         )
+    ]
+
+    for url, mse in sources:
 
         try:
 
             response = requests.get(
-
                 url,
-
                 headers=HEADERS,
-
-                timeout=(10, 30)
-
+                timeout=(10, 25)
             )
 
             response.raise_for_status()
 
-            tables = pd.read_html(
-
-                io.StringIO(response.text)
-
+            frame = combined_cash_tables(
+                response.content,
+                day,
+                mse=mse
             )
 
-            combined = []
-
-            for table in tables:
-
-                if isinstance(
-                    table.columns,
-                    pd.MultiIndex
-                ):
-
-                    table.columns = [
-                        " ".join(map(str, col))
-                        for col in table.columns
-                    ]
-
-                names = {}
-
-                for col in table.columns:
-
-                    key = normalize(col)
-
-                    if "category" in key:
-
-                        names[col] = "Category"
-
-                    elif "date" in key:
-
-                        names[col] = "Report Date"
-
-                    elif "buyvalue" in key:
-
-                        names[col] = "Buy Cr"
-
-                    elif "sellvalue" in key:
-
-                        names[col] = "Sell Cr"
-
-                    elif "netvalue" in key:
-
-                        names[col] = "Net Cr"
-
-                table = table.rename(
-                    columns=names
-                )
-
-                required = {
-
-                    "Category",
-                    "Report Date",
-                    "Buy Cr",
-                    "Sell Cr",
-                    "Net Cr"
-
-                }
-
-                if required <= set(
-                    table.columns
-                ):
-
-                    combined.append(table)
-
-            if len(combined) != 2:
-
-                raise ValueError(
-                    "Expected NSE exclusive and "
-                    "combined market tables"
-                )
-
-            # Official page lists NSE-only
-            # first and combined exchanges second.
-
-            frame = validate_cash(
-
-                combined[1].to_dict("records"),
-
-                day
-
-            )
+            frame["Source URL"] = url
 
             return frame, url
 
         except Exception as error:
 
             errors.append(
-                f"{host}: {error}"
+                f"{url}: {error}"
+            )
+
+    # Alternative NSE JSON endpoint.
+    # Scope must be verified independently
+    # before treating this as combined activity.
+
+    for host in [
+        "https://www.nseindia.com",
+        "https://www.nseindia.in"
+    ]:
+
+        url = host + "/api/fiidiiTradeReact"
+
+        try:
+
+            response = requests.get(
+                url,
+                headers={
+                    **HEADERS,
+                    "Accept": "application/json",
+                    "Referer": host + "/"
+                },
+                timeout=(10, 20)
+            )
+
+            response.raise_for_status()
+
+            payload = response.json()
+
+            if not isinstance(payload, list):
+
+                raise ValueError(
+                    "Unexpected JSON response"
+                )
+
+            rows = []
+
+            for item in payload:
+
+                rows.append({
+                    "Report Date": item["date"],
+                    "Category": item["category"],
+                    "Buy Cr": item["buyValue"],
+                    "Sell Cr": item["sellValue"],
+                    "Net Cr": item["netValue"]
+                })
+
+            frame = validate_cash(
+                rows,
+                day,
+                "UNVERIFIED_EXCHANGE_SCOPE"
+            )
+
+            # Save separately for diagnostics.
+            # Do not mix into combined cash history.
+
+            save_json(
+                DATA
+                / "logs"
+                / str(day)
+                / "cash_json_candidate.json",
+                {
+                    "source": url,
+                    "date": str(day),
+                    "status": "SCOPE_UNVERIFIED",
+                    "records": frame.to_dict(
+                        "records"
+                    )
+                }
+            )
+
+            errors.append(
+                f"{url}: valid data but "
+                "exchange scope unverified"
+            )
+
+        except Exception as error:
+
+            errors.append(
+                f"{url}: {error}"
             )
 
     raise ValueError(
-
-        "Official cash report unavailable: "
-
+        "Official combined cash report unavailable: "
         + " | ".join(errors)
-
     )
 
 
@@ -566,6 +803,12 @@ def main():
 
     results = []
 
+    print(
+        f"Institutional Engine V{VERSION}"
+    )
+
+    trading_days = []
+
     for offset in range(7):
 
         day = today - timedelta(
@@ -577,40 +820,32 @@ def main():
             or day in HOLIDAYS
         ):
 
-            print(
-                day,
-                "MARKET CLOSED"
-            )
-
+            print(day, "MARKET CLOSED")
             continue
 
+        trading_days.append(day)
+
         result = collect_source(
-
             "participant_oi",
-
             day,
-
             fetch_participant_oi
-
         )
 
         results.append(result)
-
         print(result)
 
-    result = collect_source(
+    if trading_days:
 
-        "fii_dii",
+        cash_day = trading_days[0]
 
-        today,
+        result = collect_source(
+            "fii_dii",
+            cash_day,
+            fetch_fii_dii
+        )
 
-        fetch_fii_dii
-
-    )
-
-    results.append(result)
-
-    print(result)
+        results.append(result)
+        print(result)
 
     successful = sorted({
 
@@ -619,55 +854,81 @@ def main():
         for r in results
 
         if r["status"] in [
-
             "SAVED",
             "UNCHANGED"
-
         ]
 
     })
 
     missing = sorted({
-
         "participant_oi",
         "fii_dii"
-
     } - set(successful))
 
+    failed_attempts = [
+        r for r in results
+        if r["status"] == "FAILED"
+    ]
+
+    latest_day = (
+        trading_days[0]
+        if trading_days else None
+    )
+
+    latest_missing = []
+
+    for source in [
+        "participant_oi",
+        "fii_dii"
+    ]:
+
+        found = any(
+
+            r["source"] == source
+
+            and r["status"] in [
+                "SAVED",
+                "UNCHANGED"
+            ]
+
+            and str(
+                r.get("actual_date")
+            ) == str(latest_day)
+
+            for r in results
+
+        )
+
+        if not found:
+
+            latest_missing.append(source)
+
     summary = {
-
         "version": VERSION,
-
-        "collection_time":
-
-            now().isoformat(),
-
-        "successful_sources":
-
-            successful,
-
-        "missing_sources":
-
-            missing,
-
-        "results":
-
-            results
-
+        "collection_time": now().isoformat(),
+        "latest_expected_date": str(latest_day),
+        "successful_sources": successful,
+        "missing_sources": missing,
+        "latest_missing_sources": latest_missing,
+        "failed_attempts": len(failed_attempts),
+        "results": results
     }
 
     save_json(
-
         DATA /
         "latest_institutional_collection.json",
-
         summary
-
     )
 
-    print(summary)
+    print(
+        json.dumps(
+            summary,
+            indent=2,
+            default=str
+        )
+    )
 
-    if missing:
+    if missing or latest_missing:
 
         raise SystemExit(1)
 
