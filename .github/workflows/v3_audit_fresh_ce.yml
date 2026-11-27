@@ -1,0 +1,35 @@
+name: V3 Fresh CE Rejection Audit
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_audit_fresh_ce.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy pandas scikit-learn
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-frozen-ce-model
+          run-id: 46014885503
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-fresh-2026-11-27
+          run-id: 46027284165
+          github-token: ${{ github.token }}
+          path: fresh_data
+      - run: python -m research_v3.audit_fresh_ce
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v3-fresh-ce-rejections
+          path: fresh_ce_rejections.json
