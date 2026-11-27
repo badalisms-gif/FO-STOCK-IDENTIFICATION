@@ -1,10 +1,10 @@
 {
   "version": "1.3",
-  "started": "2026-11-27T20:54:10.473863+05:30",
-  "finished": "2026-11-27T20:54:13.845098+05:30",
+  "started": "2026-11-27T23:45:56.861469+05:30",
+  "finished": "2026-11-27T23:45:59.539504+05:30",
   "collection_date": "2026-11-27",
-  "saved": 3,
-  "unchanged": 3,
+  "saved": 0,
+  "unchanged": 6,
   "failed_attempts": 1,
   "successful_sources": [
     "block",
@@ -24,7 +24,7 @@
     },
     {
       "source": "bulk",
-      "status": "SAVED",
+      "status": "UNCHANGED",
       "records": 115,
       "fo_matched_current_universe": 0,
       "requested_date": "2026-11-27",
@@ -35,7 +35,7 @@
     },
     {
       "source": "block",
-      "status": "SAVED",
+      "status": "UNCHANGED",
       "records": 11,
       "fo_matched_current_universe": 0,
       "requested_date": "2026-11-27",
@@ -46,7 +46,7 @@
     },
     {
       "source": "short",
-      "status": "SAVED",
+      "status": "UNCHANGED",
       "records": 79,
       "fo_matched_current_universe": 44,
       "requested_date": "2026-11-27",
