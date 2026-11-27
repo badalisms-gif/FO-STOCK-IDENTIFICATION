@@ -6,6 +6,7 @@ import threading
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import math
+from research_v3.forward_oi_buffer import OIBuffer
 IST=ZoneInfo("Asia/Kolkata")
 class StreamBuffer:
     def __init__(self, instruments):
@@ -13,6 +14,8 @@ class StreamBuffer:
         self.lock=threading.RLock()
         self.rows={"spot":{},"future":{},"index":{}}
         self.connected=False
+        self.oi=OIBuffer()
+        self.pending={}
         self.errors=0
     def ingest(self,message):
         with self.lock:
@@ -21,6 +24,8 @@ class StreamBuffer:
                 kind,symbol=self.instruments[key]
                 full=feed.get("fullFeed",{})
                 data=full.get("marketFF") or full.get("indexFF") or {}
+                if kind=="future" and data.get("oi") is not None:
+                    self.oi.ingest(key,data["oi"],data.get("oiTimestamp"),datetime.now(IST))
                 for c in data.get("marketOHLC",{}).get("ohlc",[]):
                     if c.get("interval")!="I1":continue
                     try:
@@ -32,11 +37,17 @@ class StreamBuffer:
                         if not all(map(math.isfinite,row)) or min(row[:4])<=0:continue
                         # Feed OI is a current snapshot, not historical bar OI.
                         # Do not attach it to an earlier candle.
-                        if kind=="future":continue
+                        if kind=="future":
+                            self.pending[(symbol,str(m))]=(t.date().isoformat(),key,row)
+                            continue
                         self.rows[kind].setdefault(symbol,{})[str(m)]=row
                     except (KeyError,ValueError,TypeError,OverflowError):self.errors+=1
     def completed(self,minute):
         with self.lock:
+            for (symbol,m),(day,key,row) in list(self.pending.items()):
+                if int(m)>=minute:continue
+                joined=self.oi.attach(day,key,int(m),row)
+                if joined is not None:self.rows["future"].setdefault(symbol,{})[m]=joined
             return {k:{s:{m:list(v) for m,v in rows.items() if int(m)<minute} for s,rows in symbols.items()} for k,symbols in self.rows.items()}
 def connect(token,buffer):
     import upstox_client
