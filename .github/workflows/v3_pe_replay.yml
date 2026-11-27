@@ -1,0 +1,43 @@
+name: V3 PE Historical Premium Replay
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_pe_replay.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt numpy pandas scikit-learn
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-historical-research
+          run-id: 45949029505
+          github-token: ${{ github.token }}
+          path: research_output
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-expired-oi-full
+          run-id: 45986844144
+          github-token: ${{ github.token }}
+          path: oi
+      - run: python -m research_v3.export_pe_signals
+      - run: python -m research_v3.pe_replay
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-pe-replay
+          path: |
+            strict_comparison.json
+            pe_signals.json
+            pe_replay/
