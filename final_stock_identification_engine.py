@@ -631,6 +631,43 @@ def show_morning():
 # LIVE DASHBOARD
 # =====================================
 
+def priority_history(frame=None, report=None):
+    """Retain observed priority classifications on this app instance."""
+    import sqlite3
+    with sqlite3.connect("v28_priority_history.sqlite3", timeout=10) as db:
+        db.execute("CREATE TABLE IF NOT EXISTS priority (day TEXT, symbol TEXT, direction TEXT, first_at TEXT, last_at TEXT, first_price REAL, last_price REAL, current_category TEXT, PRIMARY KEY(day,symbol,direction))")
+        db.execute("CREATE TABLE IF NOT EXISTS priority_session (day TEXT PRIMARY KEY)")
+        if frame is not None and report.get("Status") == "LIVE RESEARCH AVAILABLE" and not frame.empty:
+            day=now().date().isoformat()
+            observed=report["Completed At"]
+            db.execute("INSERT OR IGNORE INTO priority_session VALUES (?)",(day,))
+            for row in frame.to_dict("records"):
+                if not core.truth(row.get("Fresh")) or not core.fresh_timestamp(row.get("Quote Time")):
+                    continue
+                symbol=row["Symbol"]
+                category=row["Live Category"]
+                price=core.number(row.get("LTP"))
+                db.execute("UPDATE priority SET last_price=?,current_category=? WHERE day=? AND symbol=?",(price,category,day,symbol))
+                if category in ("PRIORITY BULLISH","PRIORITY BEARISH"):
+                    db.execute("INSERT INTO priority VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(day,symbol,direction) DO UPDATE SET last_at=excluded.last_at,last_price=excluded.last_price,current_category=excluded.current_category",(day,symbol,category,observed,observed,price,price,category))
+        day=db.execute("SELECT MAX(day) FROM priority_session").fetchone()[0]
+        return day,pd.read_sql_query("SELECT symbol AS Symbol,direction AS Priority,first_at AS 'First Seen',last_at AS 'Last Qualified',first_price AS 'First LTP',last_price AS 'Last Observed LTP',current_category AS 'Last Observed Category' FROM priority WHERE day=? ORDER BY first_at",(day,),con=db)
+
+
+def show_priority_history():
+    st.subheader("Session Priority History — Bullish / Bearish")
+    try:
+        day,history=priority_history()
+        st.caption("Session: "+str(day or "Not yet scanned")+" | Recorded observations, not live quotes. Retained until next successful live session scan.")
+        if history.empty:
+            st.info("No priority stocks recorded for this session.")
+        else:
+            st.dataframe(history,hide_index=True,use_container_width=True)
+            st.bar_chart(history.groupby("Priority")["Symbol"].nunique())
+    except Exception:
+        st.warning("Priority history storage unavailable.")
+
+
 def show_live(token):
 
     auto = st.toggle(
@@ -645,6 +682,7 @@ def show_live(token):
 
     if not token:
 
+        show_priority_history()
         st.info(
             "Enter Upstox Analytics Token"
         )
@@ -706,6 +744,7 @@ def show_live(token):
                 "window. Live scan is disabled."
             )
 
+            show_priority_history()
             return
 
         if manual or auto:
@@ -736,6 +775,10 @@ def show_live(token):
                 core.update_journal(
                     frame, report
                 )
+                try:
+                    priority_history(frame, report)
+                except Exception:
+                    st.warning("Priority history could not be saved.")
 
             except Exception as error:
 
@@ -751,8 +794,10 @@ def show_live(token):
                     safe_error(error, token)
                 )
 
+                show_priority_history()
                 return
 
+        show_priority_history()
         saved = st.session_state.get(
             RESULT_KEY
         )
