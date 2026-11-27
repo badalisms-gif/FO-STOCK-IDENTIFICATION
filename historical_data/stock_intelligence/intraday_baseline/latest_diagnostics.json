@@ -29,8 +29,8 @@
   "Minimum Required Sessions": 5,
   "Coverage %": 100.0,
   "Turnover Type": "ESTIMATED FROM MINUTE OHLC",
-  "Started At": "2026-11-27T01:21:47.183779+05:30",
-  "Completed At": "2026-11-27T01:33:51.075047+05:30",
+  "Started At": "2026-11-27T20:00:37.948698+05:30",
+  "Completed At": "2026-11-27T20:15:07.972548+05:30",
   "Independent NSE Cross Check": false,
   "Status": "COMPLETE",
   "Errors": [],
@@ -157,8 +157,8 @@
     },
     {
       "Symbol": "ATHERENERG",
-      "Candles Received": 7195,
-      "Valid Sessions": 12,
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
       "Baseline Ready": true
     },
     {
@@ -391,8 +391,8 @@
     },
     {
       "Symbol": "DIVISLAB",
-      "Candles Received": 7195,
-      "Valid Sessions": 12,
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
       "Baseline Ready": true
     },
     {
@@ -697,8 +697,8 @@
     },
     {
       "Symbol": "KALYANKJIL",
-      "Candles Received": 7195,
-      "Valid Sessions": 12,
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
       "Baseline Ready": true
     },
     {
@@ -739,8 +739,8 @@
     },
     {
       "Symbol": "LAURUSLABS",
-      "Candles Received": 7195,
-      "Valid Sessions": 12,
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
       "Baseline Ready": true
     },
     {
@@ -1015,8 +1015,8 @@
     },
     {
       "Symbol": "PNB",
-      "Candles Received": 7195,
-      "Valid Sessions": 12,
+      "Candles Received": 7570,
+      "Valid Sessions": 13,
       "Baseline Ready": true
     },
     {
@@ -1344,6 +1344,6 @@
       "Baseline Ready": true
     }
   ],
-  "Archive SHA256": "2dd29c30d0d195a3f7cbc8b36cf0d5e33baf690fde6a436757031559a4b5111a",
+  "Archive SHA256": "f5d9d0c5827bf8e0a2cb4c1fdd70b51d5c5aa077b80da15a966737e90da8305b",
   "Archive Path": "/home/runner/work/FO-STOCK-IDENTIFICATION/FO-STOCK-IDENTIFICATION/historical_data/stock_intelligence/intraday_baseline/2026-11-26/baseline.json.gz"
 }
