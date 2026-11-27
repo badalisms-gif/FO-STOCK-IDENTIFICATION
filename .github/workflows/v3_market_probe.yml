@@ -29,7 +29,12 @@ jobs:
           if t.weekday()>=5 or not 586<=t.hour*60+t.minute<=870:
               print('SKIPPED: outside market probe window')
               raise SystemExit(0)
-          d=snapshot(os.environ['UPSTOX_ACCESS_TOKEN'])
+          from live_market_engine import market_open
+          token=os.environ['UPSTOX_ACCESS_TOKEN']
+          if not market_open(token):
+              print('SKIPPED: exchange not confirmed NORMAL_OPEN')
+              raise SystemExit(0)
+          d=snapshot(token)
           result={k:len(d[k]) for k in ('universe','spots','futures','indices','errors')}
           result.update(fresh=d['fresh'],elapsed_seconds=d['elapsed_seconds'])
           print('MARKET_PROBE',json.dumps(result))
