@@ -1,0 +1,11 @@
+{
+  "Version": "2.6.0",
+  "Window": "AM",
+  "Started At": "2026-11-27T10:08:44.202602+05:30",
+  "Completed At": "2026-11-27T12:30:14.280698+05:30",
+  "Successful Live Scans": 283,
+  "Failed Scans": 0,
+  "Total Stock Rows": 61694,
+  "Status": "COLLECTION COMPLETED",
+  "Prediction Accuracy Verified": false
+}
