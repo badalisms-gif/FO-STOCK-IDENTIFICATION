@@ -8,10 +8,11 @@ from research_v3.forward_signal_ledger import MUTABLE,TERMINAL
 
 class CloudLedger:
     def __init__(self):
-        self.url=os.environ["SUPABASE_URL"].rstrip("/")+"/rest/v1/"
+        self.url=os.environ.get("SUPABASE_URL","https://axtwwftqsbiqhcfgmaxo.supabase.co").rstrip("/")+"/rest/v1/"
         self.http=requests.Session()
         key=os.environ["SUPABASE_SERVICE_ROLE_KEY"]
-        self.http.headers.update({"apikey":key,"Authorization":"Bearer "+key,"Content-Type":"application/json"})
+        self.http.headers.update({"apikey":key,"Content-Type":"application/json"})
+        if not key.startswith("sb_secret_"): self.http.headers["Authorization"]="Bearer "+key
     def call(self,method,table,params=None,data=None,prefer=None):
         r=self.http.request(method,self.url+table,params=params,json=data,headers={"Prefer":prefer} if prefer else {},timeout=15)
         r.raise_for_status()
