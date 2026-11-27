@@ -1,0 +1,76 @@
+name: V3 Historical Movement Analysis
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_analyze.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy pandas
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-historical-research
+          run-id: 45949029505
+          github-token: ${{ github.token }}
+          path: research_output
+      - name: Verify archive and summarize coverage
+        run: |
+          python - <<'PY'
+          import json,gzip,hashlib,collections
+          from pathlib import Path
+          p=Path("research_output")
+          m=json.loads((p/"manifest.json").read_text())
+          dates=collections.Counter()
+          candles=0
+          for symbol,meta in m["stocks"].items():
+              b=(p/meta["file"]).read_bytes()
+              assert hashlib.sha256(b).hexdigest()==meta["sha256"]
+              d=json.loads(gzip.decompress(b))
+              assert d["symbol"]==symbol
+              assert len(d["sessions"])==meta["sessions"]
+              for day,rows in d["sessions"].items():
+                  assert set(rows)==set(map(str,range(555,930)))
+                  dates[day]+=1
+                  candles+=len(rows)
+          report={"stocks":len(m["stocks"]),"candles":candles,"date_coverage":dict(sorted(dates.items())),"errors":m["errors"],"original_status":m["status"]}
+          (p/"coverage.json").write_text(json.dumps(report,indent=2))
+          print(json.dumps(report))
+          PY
+      - run: python -m research_v3.detect
+      - name: Summarize movement labels
+        run: |
+          python - <<'PY'
+          import pandas as pd,json
+          from pathlib import Path
+          p=Path("research_output")
+          totals={}
+          for f in sorted((p/"features").glob("*.csv.gz")):
+              d=pd.read_csv(f)
+              for c in d.columns:
+                  if c.startswith("label_"):
+                      x=totals.setdefault(c,{"eligible":0,"positive":0})
+                      x["eligible"]+=int(d[c].count())
+                      x["positive"]+=int(d[c].sum())
+          assert totals
+          for x in totals.values():
+              x["rate"]=x["positive"]/x["eligible"] if x["eligible"] else None
+          (p/"movement_summary.json").write_text(json.dumps(totals,indent=2))
+          print(json.dumps(totals))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-movement-analysis
+          path: |
+            research_output/coverage.json
+            research_output/movement_summary.json
+          retention-days: 30
