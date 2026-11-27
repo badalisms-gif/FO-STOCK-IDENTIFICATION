@@ -1,8 +1,9 @@
 
 """
 F&O LIVE MARKET INTELLIGENCE
-Version 1.7.0
+Version 1.7.1
 
+Previous Close Correction
 Full Universe Monitoring
 Stock Identification Only
 No Automatic Orders
@@ -13,6 +14,7 @@ import math
 import json
 import time
 import sqlite3
+import gzip
 import pandas as pd
 import streamlit as st
 
@@ -30,10 +32,8 @@ from stock_intelligence_engine import (
     now
 )
 
-import gzip
 
-
-VERSION = "1.7.0"
+VERSION = "1.7.1"
 
 DB_PATH = ROOT / "live_market.sqlite3"
 
@@ -55,11 +55,8 @@ SECTOR_INDICES = {
 }
 
 QUOTE_BATCH = 40
-
 MAX_QUOTE_AGE = 60
-
 MIN_BASELINE_DAYS = 5
-
 REFRESH_SECONDS = 30
 
 
@@ -74,11 +71,9 @@ def number(value):
         value = float(value)
 
         if math.isfinite(value):
-
             return value
 
     except (ValueError, TypeError):
-
         pass
 
     return None
@@ -89,7 +84,6 @@ def positive(value):
     value = number(value)
 
     if value is not None and value > 0:
-
         return value
 
     return None
@@ -98,16 +92,12 @@ def positive(value):
 def percentage(current, previous):
 
     current = number(current)
-
     previous = positive(previous)
 
     if current is None or previous is None:
-
         return None
 
-    return (
-        current / previous - 1
-    ) * 100
+    return (current / previous - 1) * 100
 
 
 # =====================================
@@ -119,22 +109,16 @@ def market_status(token):
     try:
 
         payload = get_json(
-
             UP + "/v2/market/status/NSE",
-
             token=token
-
         )
 
         if payload.get("status") != "success":
-
             return "UNVERIFIED"
 
         return str(
-
             payload.get("data", {})
             .get("status", "UNVERIFIED")
-
         ).upper()
 
     except Exception:
@@ -147,16 +131,11 @@ def market_open(token):
     current = now()
 
     if current.weekday() >= 5:
-
         return False
 
-    minute = (
-        current.hour * 60
-        + current.minute
-    )
+    minute = current.hour * 60 + current.minute
 
     if not 555 <= minute < 930:
-
         return False
 
     return market_status(token) == "NORMAL_OPEN"
@@ -172,7 +151,6 @@ def load_instruments():
     content = secure_get(MASTER)
 
     if content[:2] == b"\x1f\x8b":
-
         content = gzip.decompress(content)
 
     instruments = json.loads(content)
@@ -180,11 +158,8 @@ def load_instruments():
     universe = get_universe()
 
     reverse = {
-
         key: symbol
-
         for symbol, key in universe.items()
-
     }
 
     futures = {}
@@ -192,19 +167,14 @@ def load_instruments():
     for item in instruments:
 
         if item.get("segment") != "NSE_FO":
-
             continue
 
         if item.get("instrument_type") != "FUT":
-
             continue
 
-        underlying = item.get(
-            "underlying_key"
-        )
+        underlying = item.get("underlying_key")
 
         if underlying not in reverse:
-
             continue
 
         expiry = parse_timestamp(
@@ -212,24 +182,19 @@ def load_instruments():
         )
 
         if expiry is None:
-
             continue
 
         if expiry.date() < now().date():
-
             continue
 
         key = item.get("instrument_key")
 
         if not key:
-
             continue
 
         symbol = reverse[underlying]
 
-        futures.setdefault(
-            symbol, []
-        ).append({
+        futures.setdefault(symbol, []).append({
 
             "key": key,
 
@@ -267,9 +232,7 @@ def quote_batch(token, keys):
             UP + "/v2/market-quote/quotes",
 
             {
-
                 "instrument_key": ",".join(keys)
-
             },
 
             token
@@ -295,7 +258,6 @@ def quote_batch(token, keys):
         for response_key, item in mapping.items():
 
             if not isinstance(item, dict):
-
                 continue
 
             key = item.get("instrument_token")
@@ -303,11 +265,9 @@ def quote_batch(token, keys):
             if key not in keys:
 
                 if response_key in keys:
-
                     key = response_key
 
                 else:
-
                     continue
 
             result[key] = item
@@ -343,7 +303,6 @@ def fetch_quotes(token, keys):
     ]
 
     quotes = {}
-
     errors = []
 
     with ThreadPoolExecutor(
@@ -365,7 +324,6 @@ def fetch_quotes(token, keys):
             quotes.update(data)
 
             if error:
-
                 errors.append(error)
 
     return quotes, errors
@@ -389,19 +347,15 @@ def quote_timestamp(quote):
 def fresh_quote(quote):
 
     if not quote:
-
         return False
 
     timestamp = quote_timestamp(quote)
 
     if timestamp is None:
-
         return False
 
     age = (
-
         now() - timestamp
-
     ).total_seconds()
 
     return (
@@ -417,25 +371,72 @@ def fresh_quote(quote):
     )
 
 
+# =====================================
+# CORRECT PREVIOUS CLOSE - V1.7.1
+# =====================================
+
 def previous_close(quote):
 
-    ohlc = quote.get("ohlc") or {}
+    if not isinstance(quote, dict):
+        return None
 
-    return positive(
-        ohlc.get("close")
+    price = positive(
+        quote.get("last_price")
     )
 
+    if price is None:
+        return None
+
+    explicit_close = positive(
+        quote.get("prev_close_price")
+    )
+
+    net_change = number(
+        quote.get("net_change")
+    )
+
+    calculated_close = None
+
+    if net_change is not None:
+
+        calculated_close = positive(
+            price - net_change
+        )
+
+    if explicit_close is not None:
+
+        if calculated_close is not None:
+
+            difference = abs(
+                explicit_close
+                - calculated_close
+            )
+
+            tolerance = max(
+                0.02,
+                explicit_close * 0.0001
+            )
+
+            if difference > tolerance:
+                return None
+
+        return explicit_close
+
+    return calculated_close
+
+
+# =====================================
+# BID ASK SPREAD
+# =====================================
 
 def spread_percent(quote):
 
     depth = quote.get("depth") or {}
 
     bids = depth.get("buy") or []
-
     asks = depth.get("sell") or []
 
     if not bids or not asks:
-
         return None
 
     bid = positive(
@@ -447,11 +448,9 @@ def spread_percent(quote):
     )
 
     if bid is None or ask is None:
-
         return None
 
     if ask < bid:
-
         return None
 
     midpoint = (bid + ask) / 2
@@ -473,7 +472,6 @@ def load_daily_baseline():
     frames = []
 
     if not folder.exists():
-
         return {}
 
     today = now().date().isoformat()
@@ -483,7 +481,6 @@ def load_daily_baseline():
     ):
 
         if path.parent.name >= today:
-
             continue
 
         try:
@@ -505,29 +502,21 @@ def load_daily_baseline():
             frame = frame[eligible].copy()
 
             frame["Volume"] = pd.to_numeric(
-
                 frame["Volume"],
-
                 errors="coerce"
-
             )
 
             frame["Turnover"] = pd.to_numeric(
-
                 frame["Turnover"],
-
                 errors="coerce"
-
             )
 
             frames.append(frame)
 
         except Exception:
-
             continue
 
     if not frames:
-
         return {}
 
     data = pd.concat(
@@ -556,7 +545,6 @@ def load_daily_baseline():
         group = group.tail(20)
 
         if len(group) < MIN_BASELINE_DAYS:
-
             continue
 
         result[symbol] = {
@@ -583,19 +571,13 @@ def load_daily_baseline():
 def connect_db():
 
     DB_PATH.parent.mkdir(
-
         parents=True,
-
         exist_ok=True
-
     )
 
     connection = sqlite3.connect(
-
         DB_PATH,
-
         timeout=20
-
     )
 
     connection.execute(
@@ -639,7 +621,6 @@ def connect_db():
 def save_live_rows(rows):
 
     if not rows:
-
         return
 
     connection = connect_db()
@@ -652,11 +633,13 @@ def save_live_rows(rows):
             INSERT INTO snapshots VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
+
             ON CONFLICT (
                 session_date,
                 symbol,
                 minute
             )
+
             DO UPDATE SET
 
                 timestamp = excluded.timestamp,
@@ -732,13 +715,9 @@ def same_time_baseline(
         rows,
 
         columns=[
-
             "Date",
-
             "Volume",
-
             "Turnover"
-
         ]
 
     )
@@ -764,7 +743,6 @@ def same_time_baseline(
     turnover = turnover[turnover > 0]
 
     volume_baseline = None
-
     turnover_baseline = None
 
     if len(volumes) >= MIN_BASELINE_DAYS:
@@ -797,13 +775,9 @@ def same_time_baseline(
 def previous_snapshot(
 
     connection,
-
     symbol,
-
     session_date,
-
     timestamp,
-
     minutes
 
 ):
@@ -893,11 +867,8 @@ def scan_market(token):
     )
 
     quotes, errors = fetch_quotes(
-
         token,
-
         keys
-
     )
 
     if not market_open(token):
@@ -908,19 +879,30 @@ def scan_market(token):
 
         }, pd.DataFrame()
 
+    # =================================
+    # NIFTY CHANGE - CORRECTED
+    # =================================
+
     nifty = quotes.get(NIFTY, {})
 
     nifty_change = None
+    nifty_previous = None
 
     if fresh_quote(nifty):
+
+        nifty_previous = previous_close(nifty)
 
         nifty_change = percentage(
 
             nifty.get("last_price"),
 
-            previous_close(nifty)
+            nifty_previous
 
         )
+
+    # =================================
+    # SECTOR STRENGTH - CORRECTED
+    # =================================
 
     sectors = []
 
@@ -931,14 +913,17 @@ def scan_market(token):
         fresh = fresh_quote(quote)
 
         change = None
+        reference = None
 
         if fresh:
+
+            reference = previous_close(quote)
 
             change = percentage(
 
                 quote.get("last_price"),
 
-                previous_close(quote)
+                reference
 
             )
 
@@ -948,13 +933,21 @@ def scan_market(token):
 
             "Change %": change,
 
-            "Fresh": fresh
+            "Fresh": fresh,
+
+            "Previous Close": reference,
+
+            "Reference Available":
+                reference is not None
 
         })
 
     rows = []
-
     snapshots = []
+
+    reference_available = 0
+    reference_missing = 0
+    zero_change_stocks = 0
 
     connection = connect_db()
 
@@ -985,16 +978,17 @@ def scan_market(token):
             session_date = stamp.date().isoformat()
 
             minute = (
-
                 stamp.hour * 60
-
                 + stamp.minute
-
             )
 
             price = positive(
                 quote.get("last_price")
             )
+
+            # =========================
+            # CORRECT STOCK CHANGE
+            # =========================
 
             previous = previous_close(quote)
 
@@ -1003,18 +997,28 @@ def scan_market(token):
                 previous
             )
 
+            if previous is not None:
+                reference_available += 1
+
+            else:
+                reference_missing += 1
+
+            if change is not None and change == 0:
+                zero_change_stocks += 1
+
+            # =========================
+            # VOLUME AND TURNOVER
+            # =========================
+
             volume = number(
                 quote.get("volume")
             )
 
             if volume is not None and volume < 0:
-
                 volume = None
 
             average_price = positive(
-
                 quote.get("average_price")
-
             )
 
             turnover = None
@@ -1029,6 +1033,10 @@ def scan_market(token):
 
                 turnover = volume * average_price
 
+            # =========================
+            # FUTURES OPEN INTEREST
+            # =========================
+
             contract = futures.get(symbol, {})
 
             future_key = contract.get("key")
@@ -1040,7 +1048,6 @@ def scan_market(token):
             future_fresh = fresh_quote(future)
 
             oi = None
-
             oi_change = None
 
             if future_fresh:
@@ -1050,27 +1057,24 @@ def scan_market(token):
                 )
 
                 if oi is not None and oi < 0:
-
                     oi = None
 
                 previous_oi = positive(
-
                     future.get("prev_oi")
-
                 )
 
                 oi_change = percentage(
-
                     oi,
-
                     previous_oi
-
                 )
+
+            # =========================
+            # PRICE AND OI MOMENTUM
+            # =========================
 
             moves = {}
 
             recent_oi_change = None
-
             recent_volume = None
 
             for period in [1, 3, 5]:
@@ -1092,7 +1096,6 @@ def scan_market(token):
                 moves[period] = None
 
                 if old is None:
-
                     continue
 
                 moves[period] = percentage(
@@ -1118,9 +1121,7 @@ def scan_market(token):
                     ):
 
                         recent_volume = (
-
                             volume - old_volume
-
                         )
 
                     if (
@@ -1132,12 +1133,13 @@ def scan_market(token):
                     ):
 
                         recent_oi_change = percentage(
-
                             oi,
-
                             old[3]
-
                         )
+
+            # =========================
+            # HISTORICAL PARTICIPATION
+            # =========================
 
             baseline = same_time_baseline(
 
@@ -1162,9 +1164,7 @@ def scan_market(token):
             ):
 
                 relative_volume = (
-
                     volume / baseline["volume"]
-
                 )
 
             relative_turnover = None
@@ -1178,10 +1178,12 @@ def scan_market(token):
             ):
 
                 relative_turnover = (
-
                     turnover / baseline["turnover"]
-
                 )
+
+            # =========================
+            # CORRECT RELATIVE STRENGTH
+            # =========================
 
             relative_strength = None
 
@@ -1194,9 +1196,7 @@ def scan_market(token):
             ):
 
                 relative_strength = (
-
                     change - nifty_change
-
                 )
 
             daily_reference = daily.get(
@@ -1218,10 +1218,12 @@ def scan_market(token):
             ):
 
                 daily_progress = (
-
                     volume / daily_volume * 100
-
                 )
+
+            # =========================
+            # FULL STOCK INTELLIGENCE
+            # =========================
 
             rows.append({
 
@@ -1230,6 +1232,15 @@ def scan_market(token):
                 "Status": "FRESH",
 
                 "LTP": price,
+
+                "Previous Close": previous,
+
+                "Previous Close Available":
+                    previous is not None,
+
+                "API Net Change": number(
+                    quote.get("net_change")
+                ),
 
                 "Change %": change,
 
@@ -1326,6 +1337,80 @@ def scan_market(token):
 
     )
 
+    # =================================
+    # PREVIOUS CLOSE DIAGNOSTICS
+    # =================================
+
+    reference_coverage = (
+
+        reference_available / fresh_count * 100
+
+        if fresh_count > 0
+
+        else 0.0
+
+    )
+
+    zero_change_percentage = (
+
+        zero_change_stocks / reference_available * 100
+
+        if reference_available > 0
+
+        else None
+
+    )
+
+    reference_warnings = []
+
+    if nifty_previous is None:
+
+        reference_warnings.append(
+            "Nifty previous close unavailable"
+        )
+
+    if reference_missing > 0:
+
+        reference_warnings.append(
+
+            f"Previous close unavailable for "
+            f"{reference_missing} fresh stocks"
+
+        )
+
+    if (
+
+        reference_available >= 20
+
+        and zero_change_percentage is not None
+
+        and zero_change_percentage >= 90
+
+    ):
+
+        reference_warnings.append(
+
+            "Suspicious zero-change distribution. "
+            "Independent market comparison required."
+
+        )
+
+    if reference_warnings:
+
+        reference_status = "REVIEW REQUIRED"
+
+    elif reference_available > 0:
+
+        reference_status = "REFERENCE AVAILABLE"
+
+    else:
+
+        reference_status = "UNAVAILABLE"
+
+    # =================================
+    # COLLECTION SUMMARY
+    # =================================
+
     summary = {
 
         "version": VERSION,
@@ -1343,6 +1428,51 @@ def scan_market(token):
             len(futures),
 
         "nifty_change": nifty_change,
+
+        "nifty_previous_close":
+            nifty_previous,
+
+        "Previous Close Method":
+            "EXPLICIT PREVIOUS CLOSE OR LTP MINUS NET CHANGE",
+
+        "Previous Close Available Stocks":
+            reference_available,
+
+        "Previous Close Missing Stocks":
+            reference_missing,
+
+        "Previous Close Coverage %":
+            round(reference_coverage, 2),
+
+        "Zero Change Stocks":
+            zero_change_stocks,
+
+        "Zero Change Stocks %": (
+
+            round(zero_change_percentage, 2)
+
+            if zero_change_percentage is not None
+
+            else None
+
+        ),
+
+        "Previous Close Status":
+            reference_status,
+
+        "Previous Close Warnings":
+            reference_warnings,
+
+        "Previous Close Independently Verified":
+            False,
+
+        "Sector Reference Available": sum(
+
+            item["Reference Available"]
+
+            for item in sectors
+
+        ),
 
         "scan_seconds": round(
 
@@ -1557,6 +1687,48 @@ def render_live_market(token=""):
 
         )
 
+        # =============================
+        # REFERENCE PRICE DIAGNOSTICS
+        # =============================
+
+        p1, p2, p3 = st.columns(3)
+
+        p1.metric(
+
+            "Previous Close Available",
+
+            summary[
+                "Previous Close Available Stocks"
+            ]
+
+        )
+
+        p2.metric(
+
+            "Previous Close Coverage",
+
+            f"{summary['Previous Close Coverage %']:.2f}%"
+
+        )
+
+        p3.metric(
+
+            "Zero Change Stocks",
+
+            summary["Zero Change Stocks"]
+
+        )
+
+        for warning in summary.get(
+
+            "Previous Close Warnings",
+
+            []
+
+        ):
+
+            st.warning(warning)
+
         if summary["errors"]:
 
             st.warning(
@@ -1572,6 +1744,10 @@ def render_live_market(token=""):
             ):
 
                 st.json(summary["errors"])
+
+        # =============================
+        # SECTOR STRENGTH
+        # =============================
 
         st.subheader(
             "Sector Market Strength"
@@ -1594,6 +1770,10 @@ def render_live_market(token=""):
             hide_index=True
 
         )
+
+        # =============================
+        # FULL STOCK UNIVERSE
+        # =============================
 
         st.subheader(
             "Full F&O Stock Intelligence"
@@ -1624,6 +1804,8 @@ def render_live_market(token=""):
             sort_options = [
 
                 "Symbol",
+
+                "Change %",
 
                 "Relative Strength %",
 
@@ -1717,11 +1899,13 @@ def render_live_market(token=""):
 
         st.info(
 
-            "Same-time RVOL requires at least "
+            "Local same-time RVOL requires at least "
 
             "five prior observed sessions. "
 
-            "Until then it remains unavailable."
+            "The integrated historical bridge may "
+
+            "supply its separate archived baseline."
 
         )
 
