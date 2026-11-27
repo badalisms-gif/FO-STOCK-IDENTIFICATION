@@ -1,0 +1,47 @@
+name: November 27 Dashboard Performance
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_today_replay.yml']
+permissions:
+  contents: read
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: |
+          python - <<'PY'
+          import json
+          import opportunity_performance_engine as p
+          day="2026-11-27"
+          frame,report=p.build_performance(day)
+          scans,diag=p.load_scans(day)
+          events,series,eligible=p.replay(day,scans)
+          moves=[]
+          for symbol,values in series.items():
+              if len(values)<2:continue
+              start=values[0][1]
+              hi=max(values,key=lambda x:x[1])
+              lo=min(values,key=lambda x:x[1])
+              moves.append({"symbol":symbol,"first_quote":values[0][0].isoformat(),"up_pct":round((hi[1]/start-1)*100,3),"down_pct":round((lo[1]/start-1)*100,3),"high_time":hi[0].isoformat(),"low_time":lo[0].isoformat(),"events":[e for e in events if e["Symbol"]==symbol]})
+          print("TOP_UP",json.dumps(sorted(moves,key=lambda x:-x["up_pct"])[:10],default=str))
+          print("TOP_DOWN",json.dumps(sorted(moves,key=lambda x:x["down_pct"])[:10],default=str))
+          frame.to_csv("today_replay.csv",index=False)
+          with open("today_moves.json","w") as f:json.dump(moves,f,default=str)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: november-27-replay
+          path: |
+            today_replay.csv
+            today_moves.json
+            historical_data/opportunity_performance/2026-11-27/
