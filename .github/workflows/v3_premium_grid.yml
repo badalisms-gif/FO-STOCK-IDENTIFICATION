@@ -1,0 +1,58 @@
+name: V3 CE PE Premium Risk Grid
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_premium_grid.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-historical-research
+          run-id: 45949029505
+          github-token: ${{ github.token }}
+          path: research_output
+      - name: Wait for signal export
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 60); do
+            status=$(gh api repos/${{ github.repository }}/actions/runs/46003386612 --jq '.status')
+            if [ "$status" = completed ]; then
+              test "$(gh api repos/${{ github.repository }}/actions/runs/46003386612 --jq '.conclusion')" = success
+              exit $?
+            fi
+            sleep 15
+          done
+          exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-ce-signal-export
+          run-id: 46003386612
+          github-token: ${{ github.token }}
+          path: signals
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-pe-replay
+          run-id: 46005550523
+          github-token: ${{ github.token }}
+          path: pe
+      - run: python -m research_v3.premium_grid
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-premium-grid
+          path: premium_grid
