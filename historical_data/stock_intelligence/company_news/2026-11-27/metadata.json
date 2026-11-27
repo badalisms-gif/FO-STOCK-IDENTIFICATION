@@ -1,0 +1,15 @@
+{
+  "version": "1.6.0",
+  "source": "company_news",
+  "report_date": "2026-11-27",
+  "records": 218,
+  "sha256": "d45b9c00f42c798b3ddf9911f3f2b754d2725ed9a63a222e3d38f42cb7e6cab8",
+  "checked_at": "2026-11-27T10:00:21.804487+05:30",
+  "requested_stocks": 218,
+  "returned_instrument_keys": 86,
+  "attempted_batches": 8,
+  "complete_batches": 8,
+  "rejected_records": 5,
+  "coverage_verified": false,
+  "errors": []
+}

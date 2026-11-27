@@ -1,10 +1,10 @@
 {
   "version": "1.6.0",
-  "collection_time": "2026-11-26T21:38:55.055695+05:30",
+  "collection_time": "2026-11-27T10:00:21.804701+05:30",
   "overall_status": "PARTIAL",
   "universe_size": 218,
   "latest_expected_report_date": "2026-11-26",
-  "historical_dates_requested": 24,
+  "historical_dates_requested": 23,
   "required_sources": [
     "cash_bhavcopy",
     "delivery"
@@ -43,12 +43,12 @@
       "report_date": "2026-11-26",
       "records": 218,
       "sha256": "68bd031f8053fe9d671c7dc9cddb5c783e10d82577a893eb068f0028f36cd5b1",
-      "checked_at": "2026-11-26T21:38:46.071740+05:30",
+      "checked_at": "2026-11-27T10:00:11.917996+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -56,12 +56,12 @@
       "report_date": "2026-11-26",
       "records": 218,
       "sha256": "ce1c18e0e29278c1c62a19d0a148e69b97091a3da4a06e2adce4246a34498f43",
-      "checked_at": "2026-11-26T21:38:45.734401+05:30",
+      "checked_at": "2026-11-27T10:00:11.914009+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -69,12 +69,12 @@
       "report_date": "2026-11-25",
       "records": 218,
       "sha256": "26758d4b3951ec8a339899343c33878cf675d85e971cbf067facfa22990fc3ad",
-      "checked_at": "2026-11-26T21:38:46.101469+05:30",
+      "checked_at": "2026-11-27T10:00:12.186114+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -82,12 +82,12 @@
       "report_date": "2026-11-25",
       "records": 218,
       "sha256": "02c77648e9193896d2ddbab13ab333ef97ea0bde94ac07ebc880859d1cca9edc",
-      "checked_at": "2026-11-26T21:38:46.039019+05:30",
+      "checked_at": "2026-11-27T10:00:12.352990+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -95,12 +95,12 @@
       "report_date": "2026-11-23",
       "records": 218,
       "sha256": "9089583d30f115a952e94e47ff9e8d2e63990a9ef08eaa09f1f59ebf7b5208b3",
-      "checked_at": "2026-11-26T21:38:46.374983+05:30",
+      "checked_at": "2026-11-27T10:00:12.307646+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -108,12 +108,12 @@
       "report_date": "2026-11-23",
       "records": 218,
       "sha256": "ed3d693aa3aab999b5e7d6b5460a0f306afc50cc0d46890c5cec73d32b43ac3a",
-      "checked_at": "2026-11-26T21:38:46.395693+05:30",
+      "checked_at": "2026-11-27T10:00:12.500187+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -121,12 +121,12 @@
       "report_date": "2026-11-20",
       "records": 218,
       "sha256": "88ed5f498723d6d2967643bc70485bfc5d94e9fe44f884b5200b918a04ea154e",
-      "checked_at": "2026-11-26T21:38:46.433407+05:30",
+      "checked_at": "2026-11-27T10:00:12.623383+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -134,12 +134,12 @@
       "report_date": "2026-11-20",
       "records": 218,
       "sha256": "5898d9fc46a194fa3825b244d3d5dd95142bfba01623e4a9d8a53859d6b201ee",
-      "checked_at": "2026-11-26T21:38:46.676367+05:30",
+      "checked_at": "2026-11-27T10:00:12.741840+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -147,12 +147,12 @@
       "report_date": "2026-11-19",
       "records": 218,
       "sha256": "d874c33bc33df48fd73c39995738532fbf67f326a8b1e9c42429c5e7a259a624",
-      "checked_at": "2026-11-26T21:38:46.721479+05:30",
+      "checked_at": "2026-11-27T10:00:12.850524+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -160,12 +160,12 @@
       "report_date": "2026-11-19",
       "records": 218,
       "sha256": "682d7cf9327cdfcff206efe5abf1dadb80c28d75f64c7f6dd7da0f2e9a79c508",
-      "checked_at": "2026-11-26T21:38:46.740169+05:30",
+      "checked_at": "2026-11-27T10:00:12.941922+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -173,12 +173,12 @@
       "report_date": "2026-11-18",
       "records": 218,
       "sha256": "d54908bfc8a638ecdb1cafd44373b56f1b9239391ac8a0cad01500effdb63bd5",
-      "checked_at": "2026-11-26T21:38:46.982555+05:30",
+      "checked_at": "2026-11-27T10:00:13.086011+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -186,12 +186,12 @@
       "report_date": "2026-11-18",
       "records": 218,
       "sha256": "132d85b4e1805947b21dfc32920c3b93c7a55734f3d41124c34ca7ac798a0ffc",
-      "checked_at": "2026-11-26T21:38:47.021561+05:30",
+      "checked_at": "2026-11-27T10:00:13.230417+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -199,12 +199,12 @@
       "report_date": "2026-11-17",
       "records": 218,
       "sha256": "535efaaf3f75d21e0c987be408c1cda928e798f92cd552a15cd8522f81abe386",
-      "checked_at": "2026-11-26T21:38:47.063543+05:30",
+      "checked_at": "2026-11-27T10:00:13.268638+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -212,12 +212,12 @@
       "report_date": "2026-11-17",
       "records": 218,
       "sha256": "9eb7eb3f9dcfb7caf80d76d34d63d0af0219751697390122c1fed96622e81ca1",
-      "checked_at": "2026-11-26T21:38:47.325475+05:30",
+      "checked_at": "2026-11-27T10:00:13.445408+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -225,12 +225,12 @@
       "report_date": "2026-11-16",
       "records": 218,
       "sha256": "c4cb0c1c168dbb700b451617e59003a834e475e76bd1f275229d4edb84f8ea36",
-      "checked_at": "2026-11-26T21:38:47.366469+05:30",
+      "checked_at": "2026-11-27T10:00:13.946391+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -238,12 +238,12 @@
       "report_date": "2026-11-16",
       "records": 218,
       "sha256": "5a30fdf9b2929d13ec9c90e2a6741474d6e971149d89da23592a77d493ff4475",
-      "checked_at": "2026-11-26T21:38:47.401345+05:30",
+      "checked_at": "2026-11-27T10:00:13.588499+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -251,12 +251,12 @@
       "report_date": "2026-11-13",
       "records": 218,
       "sha256": "7196c7b5084c45d982e0f9069119b772eadba87727279fbc00744fc4cb180309",
-      "checked_at": "2026-11-26T21:38:47.642972+05:30",
+      "checked_at": "2026-11-27T10:00:13.867175+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -264,12 +264,12 @@
       "report_date": "2026-11-13",
       "records": 218,
       "sha256": "1e7c0737d76d13317a440eb3985df37a15ac3f9a590d9060f0cd7fd9b0d59937",
-      "checked_at": "2026-11-26T21:38:47.677379+05:30",
+      "checked_at": "2026-11-27T10:00:13.979373+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -277,12 +277,12 @@
       "report_date": "2026-11-12",
       "records": 218,
       "sha256": "6717494d24f0ebfd31768887796da50f675e316618b2c8cbec10980862755cc9",
-      "checked_at": "2026-11-26T21:38:47.719274+05:30",
+      "checked_at": "2026-11-27T10:00:14.239692+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -290,12 +290,12 @@
       "report_date": "2026-11-12",
       "records": 218,
       "sha256": "a515451b251102affe66c62b5a893331482493555294b62ac1e0755fb14caad6",
-      "checked_at": "2026-11-26T21:38:47.935659+05:30",
+      "checked_at": "2026-11-27T10:00:14.254808+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -303,12 +303,12 @@
       "report_date": "2026-11-11",
       "records": 218,
       "sha256": "54a7afb91eefba99079579fc1d328c0e448b95f1bd92760f78f4407976cd878e",
-      "checked_at": "2026-11-26T21:38:47.993218+05:30",
+      "checked_at": "2026-11-27T10:00:14.090787+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -316,12 +316,12 @@
       "report_date": "2026-11-11",
       "records": 218,
       "sha256": "5bae84ddf2ef886c876234b230b4f7039368b572ecbdb0e9a555938b1a973187",
-      "checked_at": "2026-11-26T21:38:48.057943+05:30",
+      "checked_at": "2026-11-27T10:00:14.513155+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "source": "cash_bhavcopy",
@@ -343,12 +343,12 @@
       "report_date": "2026-11-09",
       "records": 218,
       "sha256": "ba1db14f72921a8cfbcd0746d04adba174f2b19a7c36a9de9c98f0fdd64789fb",
-      "checked_at": "2026-11-26T21:38:48.404932+05:30",
+      "checked_at": "2026-11-27T10:00:14.841294+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -356,12 +356,12 @@
       "report_date": "2026-11-09",
       "records": 218,
       "sha256": "1f447fd18287f160e7c252fa20d4e6dd7733be8f61ccabab43edcf84bf4c62ae",
-      "checked_at": "2026-11-26T21:38:48.620810+05:30",
+      "checked_at": "2026-11-27T10:00:14.907278+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -369,12 +369,12 @@
       "report_date": "2026-11-06",
       "records": 218,
       "sha256": "d5f25eb8a131ca5e0ccdd060506f8d57536a5322df35b996afb8a4aa8ba38699",
-      "checked_at": "2026-11-26T21:38:48.683916+05:30",
+      "checked_at": "2026-11-27T10:00:15.045831+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -382,12 +382,12 @@
       "report_date": "2026-11-06",
       "records": 218,
       "sha256": "7a279810607ab2b9f64029b25c279e219f3f582f6d650e01ea0ea2b1b95113d6",
-      "checked_at": "2026-11-26T21:38:48.764887+05:30",
+      "checked_at": "2026-11-27T10:00:15.144949+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -395,12 +395,12 @@
       "report_date": "2026-11-05",
       "records": 218,
       "sha256": "29d4cdd69ef81dee7374fe06ff4a0a0d7b5ddc9181849cb062f92baacfe9e3a8",
-      "checked_at": "2026-11-26T21:38:48.938198+05:30",
+      "checked_at": "2026-11-27T10:00:15.263011+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -408,12 +408,12 @@
       "report_date": "2026-11-05",
       "records": 218,
       "sha256": "6ce87aad15fd7788153bf184a9c2f40a4a5c075d17d036b5b7104e1124106a46",
-      "checked_at": "2026-11-26T21:38:48.969015+05:30",
+      "checked_at": "2026-11-27T10:00:15.455100+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -421,12 +421,12 @@
       "report_date": "2026-11-04",
       "records": 218,
       "sha256": "3832607a64c961e87f962f21af04560623d401eaad3181ad628962081843843f",
-      "checked_at": "2026-11-26T21:38:49.106672+05:30",
+      "checked_at": "2026-11-27T10:00:15.477057+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -434,12 +434,12 @@
       "report_date": "2026-11-04",
       "records": 218,
       "sha256": "c6ea9ad0a4b9a1e42c3364115516b4c9a5d4423a85ee6d0f5d3aa655018328e7",
-      "checked_at": "2026-11-26T21:38:49.262145+05:30",
+      "checked_at": "2026-11-27T10:00:15.712494+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -447,12 +447,12 @@
       "report_date": "2026-11-03",
       "records": 218,
       "sha256": "79d6602bf49615020edeff9838a4addb81af0b03a5db8453d5616cbbacd26a75",
-      "checked_at": "2026-11-26T21:38:49.302825+05:30",
+      "checked_at": "2026-11-27T10:00:15.840640+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -460,12 +460,12 @@
       "report_date": "2026-11-03",
       "records": 218,
       "sha256": "e3a1c9d4c3b426864ecebc87d866d06a7909fa2a9c67d77003931305cceec05f",
-      "checked_at": "2026-11-26T21:38:49.407737+05:30",
+      "checked_at": "2026-11-27T10:00:15.835005+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -473,12 +473,12 @@
       "report_date": "2026-11-02",
       "records": 218,
       "sha256": "b2c9fa146f61b135c79e60e4f3db51eb8e40e4529dd379d0a31c1a3c73ebe23e",
-      "checked_at": "2026-11-26T21:38:49.588168+05:30",
+      "checked_at": "2026-11-27T10:00:16.131124+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -486,12 +486,12 @@
       "report_date": "2026-11-02",
       "records": 218,
       "sha256": "7582e428c34ee56732bb5abd6a977e2a1f4c6cd781a5c86740179fe7a149dde5",
-      "checked_at": "2026-11-26T21:38:49.614093+05:30",
+      "checked_at": "2026-11-27T10:00:16.191015+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -499,12 +499,12 @@
       "report_date": "2026-10-30",
       "records": 218,
       "sha256": "f34448b014868af4055fa8c873652c3edd1f3623ba12202e4fdaa9dd1c6c334d",
-      "checked_at": "2026-11-26T21:38:49.729362+05:30",
+      "checked_at": "2026-11-27T10:00:16.207887+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -512,12 +512,12 @@
       "report_date": "2026-10-30",
       "records": 218,
       "sha256": "0e54b22d4276401e39e96727f34992842d20a2d4a53e552b21ef50ffcee635c3",
-      "checked_at": "2026-11-26T21:38:49.925706+05:30",
+      "checked_at": "2026-11-27T10:00:16.508856+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -525,12 +525,12 @@
       "report_date": "2026-10-29",
       "records": 218,
       "sha256": "8894dd302799c05f9d9d89185ebca13e10778884e530464a159b8662dee91afe",
-      "checked_at": "2026-11-26T21:38:49.963263+05:30",
+      "checked_at": "2026-11-27T10:00:16.560512+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -538,12 +538,12 @@
       "report_date": "2026-10-29",
       "records": 218,
       "sha256": "6f01d441be5801cfbf8c4e56c7be04254412ef9186bfd06018b84658068f2891",
-      "checked_at": "2026-11-26T21:38:50.055657+05:30",
+      "checked_at": "2026-11-27T10:00:16.539210+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -551,12 +551,12 @@
       "report_date": "2026-10-28",
       "records": 218,
       "sha256": "35a4e73557cb37924be00d94672ffe495c231b1f7ce4880e8d097c2043c80505",
-      "checked_at": "2026-11-26T21:38:50.238790+05:30",
+      "checked_at": "2026-11-27T10:00:16.893205+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -564,12 +564,12 @@
       "report_date": "2026-10-28",
       "records": 218,
       "sha256": "a85022494b5465a0e6802ab4d0fce1322dd52dd1da2e1548b39f33f1f647f9d2",
-      "checked_at": "2026-11-26T21:38:50.271979+05:30",
+      "checked_at": "2026-11-27T10:00:16.870167+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -577,12 +577,12 @@
       "report_date": "2026-10-27",
       "records": 218,
       "sha256": "ab0a69c457bf1089d838c2eb1f2900b4ca323302164a472f36ef20e47ca80c6c",
-      "checked_at": "2026-11-26T21:38:50.378474+05:30",
+      "checked_at": "2026-11-27T10:00:16.919402+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -590,12 +590,12 @@
       "report_date": "2026-10-27",
       "records": 218,
       "sha256": "c93e76d3275acceaa27d2b65b9c30e81edd65b9f110340919f367ff9b59119a0",
-      "checked_at": "2026-11-26T21:38:50.553731+05:30",
+      "checked_at": "2026-11-27T10:00:17.239745+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -603,12 +603,12 @@
       "report_date": "2026-10-26",
       "records": 218,
       "sha256": "f92cb16c55f5afa732f5be9f9a62abbbe59c1903831f4d1ce71b289f77837900",
-      "checked_at": "2026-11-26T21:38:50.600864+05:30",
+      "checked_at": "2026-11-27T10:00:17.239841+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
@@ -616,61 +616,35 @@
       "report_date": "2026-10-26",
       "records": 218,
       "sha256": "47b6e6e6698e309e125b0c1ffdfb4e475a1050e2f91d7a9dea4775bc4e109c32",
-      "checked_at": "2026-11-26T21:38:50.683646+05:30",
+      "checked_at": "2026-11-27T10:00:17.442214+05:30",
       "universe_size": 218,
       "covered_stocks": 218,
       "eligible_stocks": 218,
       "coverage_verified": true,
-      "status": "SAVED"
-    },
-    {
-      "version": "1.6.0",
-      "source": "cash_bhavcopy",
-      "report_date": "2026-10-23",
-      "records": 218,
-      "sha256": "83ae82c945311eafba3e5cc015b716f4fa578f6afde68d2caa5e862a48bbd9f8",
-      "checked_at": "2026-11-26T21:38:50.870960+05:30",
-      "universe_size": 218,
-      "covered_stocks": 218,
-      "eligible_stocks": 218,
-      "coverage_verified": true,
-      "status": "SAVED"
-    },
-    {
-      "version": "1.6.0",
-      "source": "delivery",
-      "report_date": "2026-10-23",
-      "records": 218,
-      "sha256": "d8de46bc7504fc230f7da771393f8abc8d9c466f1fe7a164ff441b22cfbae006",
-      "checked_at": "2026-11-26T21:38:50.941089+05:30",
-      "universe_size": 218,
-      "covered_stocks": 218,
-      "eligible_stocks": 218,
-      "coverage_verified": true,
-      "status": "SAVED"
+      "status": "UNCHANGED"
     },
     {
       "version": "1.6.0",
       "source": "announcements",
-      "report_date": "2026-11-26",
-      "records": 382,
-      "sha256": "d7ee55760905672b78012c2061b5ed045c3a77a5391f3345b79433edf78129ea",
-      "checked_at": "2026-11-26T21:38:51.876126+05:30",
-      "raw_records": 2382,
+      "report_date": "2026-11-27",
+      "records": 317,
+      "sha256": "cae0d5cc28fd20d253b33114ca4e8b23083cd2e84308644128b0f0d7ebc154be",
+      "checked_at": "2026-11-27T10:00:18.415263+05:30",
+      "raw_records": 1950,
       "rejected_records": 0,
       "coverage_verified": false,
-      "lookback_start": "2026-11-19",
-      "lookback_end": "2026-11-26",
+      "lookback_start": "2026-11-20",
+      "lookback_end": "2026-11-27",
       "status": "SAVED"
     },
     {
       "version": "1.6.0",
       "source": "corporate_events",
-      "report_date": "2026-11-26",
+      "report_date": "2026-11-27",
       "records": 0,
       "sha256": "039212a26ac6c4747ce69795debf787d4a72db56fc3d74580ce2984bfd2212e6",
-      "checked_at": "2026-11-26T21:38:52.179831+05:30",
-      "raw_records": 67,
+      "checked_at": "2026-11-27T10:00:18.721579+05:30",
+      "raw_records": 51,
       "rejected_records": 0,
       "coverage_verified": false,
       "status": "SAVED"
@@ -678,10 +652,10 @@
     {
       "version": "1.6.0",
       "source": "pre_market",
-      "report_date": "2026-11-26",
+      "report_date": "2026-11-27",
       "records": 218,
-      "sha256": "81ef6719303548b7fde0a4ea41d182c0cd6de468979f29eddf51c7bbd044148f",
-      "checked_at": "2026-11-26T21:38:52.554452+05:30",
+      "sha256": "024cecb6e0817d41efd3deaf6b11c5b1aa24768e203b08d93ff20d09d43519ed",
+      "checked_at": "2026-11-27T10:00:19.188561+05:30",
       "raw_records": 218,
       "rejected_records": 0,
       "coverage_verified": false,
@@ -690,15 +664,15 @@
     {
       "version": "1.6.0",
       "source": "company_news",
-      "report_date": "2026-11-26",
-      "records": 204,
-      "sha256": "b0dc8c9b3f8dd9d544f5043d7e47b252f2201920978ee48a222e81b30202e3e5",
-      "checked_at": "2026-11-26T21:38:55.055412+05:30",
+      "report_date": "2026-11-27",
+      "records": 218,
+      "sha256": "d45b9c00f42c798b3ddf9911f3f2b754d2725ed9a63a222e3d38f42cb7e6cab8",
+      "checked_at": "2026-11-27T10:00:21.804487+05:30",
       "requested_stocks": 218,
-      "returned_instrument_keys": 92,
+      "returned_instrument_keys": 86,
       "attempted_batches": 8,
       "complete_batches": 8,
-      "rejected_records": 44,
+      "rejected_records": 5,
       "coverage_verified": false,
       "errors": [],
       "status": "SAVED"
