@@ -1,0 +1,26 @@
+name: V3 Expired Futures OI Pilot
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_expired_oi_pilot.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python -m research_v3.expired_oi_pilot
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-expired-oi-pilot
+          path: research_output/expired_oi_pilot/
