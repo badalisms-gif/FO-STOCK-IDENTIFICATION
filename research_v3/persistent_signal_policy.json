@@ -1,0 +1,64 @@
+{
+  "retention": "entire IST trading session; archive previous sessions",
+  "storage": "durable shared ledger, not Streamlit session state",
+  "identity": [
+    "session_date",
+    "instrument_key",
+    "side",
+    "signal_id"
+  ],
+  "dedup": "one visible contract row with separate strategy and trade histories; requalification updates existing row, never silently resets levels",
+  "immutable": [
+    "first_qualified_at",
+    "original_score",
+    "entry",
+    "stop_loss",
+    "target",
+    "expiry",
+    "lot_size",
+    "exit_deadline"
+  ],
+  "refreshable": [
+    "current_score",
+    "current_premium",
+    "bid",
+    "ask",
+    "spread_pct",
+    "oi",
+    "volume",
+    "greeks",
+    "last_seen_at",
+    "last_qualified_at",
+    "filter_status",
+    "trade_status",
+    "paper_pnl"
+  ],
+  "filter_status": [
+    "NEW SIGNAL",
+    "QUALIFIED",
+    "MOMENTUM WEAKENING",
+    "FILTER LOST",
+    "REQUALIFIED",
+    "DATA STALE"
+  ],
+  "trade_status": [
+    "WATCH",
+    "REJECTED",
+    "ACTIVE",
+    "TARGET HIT",
+    "SL HIT",
+    "TIME EXIT",
+    "UNPRICED EXIT"
+  ],
+  "rules": {
+    "missing_scan": "DATA STALE; never infer filter failure from missing data",
+    "filter_failure": "retain row and levels; no automatic exit",
+    "terminal": "retain exit price and result; never reopen same trade",
+    "new_trade": "new signal ID only after cooldown and independent qualification; retain prior trade history",
+    "refresh": "merge updates, never replace ledger with current qualifying subset",
+    "pnl": "live bid based indicative PnL for active paper trades; realized simulated result fixed on exit",
+    "archive": "retain all qualified and rejected records, including first and last qualification timestamps",
+    "real_orders": false,
+    "live_deployment": false
+  }
+}
