@@ -1,0 +1,38 @@
+name: V3 Fresh Threshold Premium Replay
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_replay_fresh_thresholds.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-fresh-2026-11-27
+          run-id: 46027284165
+          github-token: ${{ github.token }}
+          path: fresh_data
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-ce-threshold-exploration
+          run-id: 46032650343
+          github-token: ${{ github.token }}
+      - run: python -m research_v3.replay_fresh_thresholds
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-fresh-threshold-premium
+          path: premium_grid
