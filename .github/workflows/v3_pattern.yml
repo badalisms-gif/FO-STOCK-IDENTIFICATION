@@ -1,0 +1,34 @@
+name: V3 Pattern Research
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_pattern.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  pattern:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy pandas scikit-learn
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-historical-research
+          run-id: 45949029505
+          github-token: ${{ github.token }}
+          path: research_output
+      - run: python -m research_v3.pattern
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-pattern-report
+          path: research_output/pattern_report.json
+          retention-days: 30
