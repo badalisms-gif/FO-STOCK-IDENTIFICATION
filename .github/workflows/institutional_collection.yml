@@ -16,6 +16,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout latest main branch
@@ -36,10 +37,17 @@ jobs:
       - name: Synchronize latest repository
         run: git pull --ff-only origin main
 
+      - name: Verify engine version
+        run: |
+          git rev-parse HEAD
+          python -c "import institutional_data_engine as e; print('Institutional Engine:', e.VERSION); assert e.VERSION == '1.5.4'"
+
       - name: Run institutional collector
         id: collector
         continue-on-error: true
-        run: python institutional_data_engine.py
+        run: |
+          python -c "from datetime import datetime, timezone; from pathlib import Path; Path('/tmp/institutional_started').write_text(datetime.now(timezone.utc).isoformat())"
+          python institutional_data_engine.py
 
       - name: Save historical data
         if: always()
@@ -52,18 +60,68 @@ jobs:
           if git diff --cached --quiet; then
             echo "No new historical data"
           else
-            git commit -m "Automatic institutional data collection"
+            git commit -m "Automatic NSE institutional data collection"
             git pull --rebase origin main
-            git push origin main
+            git push origin HEAD:main
           fi
 
       - name: Verify collection result
         if: always()
+        env:
+          COLLECTOR_OUTCOME: ${{ steps.collector.outcome }}
         run: |
-          if [ -f historical_data/latest_institutional_collection.json ]; then
-            cat historical_data/latest_institutional_collection.json
-          fi
+          python - <<'PY'
+          import os
+          import json
+          from pathlib import Path
+          from datetime import datetime
 
-          if [ "${{ steps.collector.outcome }}" != "success" ]; then
-            exit 1
-          fi
+          path = Path(
+              "historical_data/latest_institutional_collection.json"
+          )
+
+          if not path.exists():
+              raise SystemExit("Collection summary missing")
+
+          report = json.loads(path.read_text())
+
+          print(json.dumps(report, indent=2))
+
+          started = datetime.fromisoformat(
+              Path("/tmp/institutional_started").read_text()
+          )
+
+          completed = datetime.fromisoformat(
+              report["collection_time"]
+          )
+
+          if completed < started:
+              raise SystemExit("Old collection summary detected")
+
+          if report.get("version") != "1.5.4":
+              raise SystemExit("Unexpected engine version")
+
+          if os.environ["COLLECTOR_OUTCOME"] != "success":
+              raise SystemExit("Institutional collector failed")
+
+          if report.get("combined_cash_required") is not False:
+              raise SystemExit("Unexpected cash data requirement")
+
+          eligible = [
+              row for row in report.get("results", [])
+              if row.get("source") == "participant_oi"
+              and row.get("status") in ("SAVED", "UNCHANGED")
+              and row.get("eligible_for_analysis") is True
+          ]
+
+          if not eligible:
+              raise SystemExit("No eligible NSE Participant OI data")
+
+          if report.get("participant_oi_latest_eligible"):
+              print("Latest expected NSE Participant OI verified")
+          else:
+              print("::warning::Latest expected OI unavailable. Historical OI available only.")
+
+          print("Optional FII/DII cash data does not block collection")
+          print("Institutional verification completed")
+          PY
