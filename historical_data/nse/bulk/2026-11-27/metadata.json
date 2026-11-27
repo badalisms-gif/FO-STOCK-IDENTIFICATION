@@ -1,0 +1,10 @@
+{
+  "source": "bulk",
+  "report_date": "2026-11-27",
+  "requested_date": "2026-11-27",
+  "origin": "NSE automatic",
+  "version": "1.3",
+  "sha256": "30d0b45a66e8d60c1e6424ef7d4115343afd3eb264a9f1bd42178e92c187f8f8",
+  "records": 115,
+  "saved_at": "2026-11-27T20:54:11.475480+05:30"
+}
