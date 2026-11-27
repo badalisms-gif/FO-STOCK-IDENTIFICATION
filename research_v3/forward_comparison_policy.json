@@ -1,0 +1,44 @@
+{
+  "status": "research_only",
+  "start_date": "2026-11-30",
+  "minimum_sessions": 20,
+  "minimum_valid_trades_per_candidate": 30,
+  "model_artifact_run": 46014885503,
+  "candidates": [
+    {
+      "name": "CE STRICT",
+      "threshold": 0.6513329335878008
+    },
+    {
+      "name": "CE A",
+      "threshold": 0.6
+    }
+  ],
+  "risk": {
+    "stop_loss": 0.08,
+    "target": 0.3,
+    "max_hold_minutes": 15,
+    "min_premium": 5,
+    "last_entry_minute": 870,
+    "exclude_expiry_day": true
+  },
+  "execution": {
+    "paper_only": true,
+    "require_timestamped_bid_ask_before_entry": true,
+    "require_positive_bid_ask_size": true,
+    "max_relative_spread": 0.02,
+    "entry": "observed ask",
+    "exit": "observed bid",
+    "missing_quotes": "record rejection, never assume fill",
+    "no_future_volume_filter": true
+  },
+  "evaluation": {
+    "include_no_signal_sessions": true,
+    "report_all_rejections": true,
+    "positive_net_expectancy_required": true,
+    "report_daily_pnl_and_drawdown": true,
+    "no_retuning_during_validation": true
+  },
+  "pe_enabled": false,
+  "live_dashboard_changes": false
+}
