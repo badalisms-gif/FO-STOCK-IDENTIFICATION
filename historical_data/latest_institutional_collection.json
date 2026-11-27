@@ -1,8 +1,8 @@
 {
   "version": "1.5.4",
-  "collection_time": "2026-11-27T08:28:38.511010+05:30",
+  "collection_time": "2026-11-27T20:58:53.248999+05:30",
   "latest_expected_date": "2026-11-27",
-  "overall_status": "PARTIAL",
+  "overall_status": "COMPLETE",
   "required_sources": [
     "participant_oi"
   ],
@@ -10,27 +10,32 @@
     "fii_dii_unverified"
   ],
   "successful_sources": [
+    "fii_dii_unverified",
     "participant_oi"
   ],
   "missing_sources": [],
-  "latest_missing_sources": [
-    "participant_oi"
-  ],
-  "participant_oi_latest_available": false,
-  "participant_oi_latest_eligible": false,
+  "latest_missing_sources": [],
+  "participant_oi_latest_available": true,
+  "participant_oi_latest_eligible": true,
   "combined_cash_required": false,
   "combined_cash_verified": false,
-  "unverified_cash_available": false,
+  "unverified_cash_available": true,
   "cash_eligible_for_analysis": false,
-  "historical_oi_failed_attempts": 1,
-  "failed_attempts": 2,
+  "historical_oi_failed_attempts": 0,
+  "failed_attempts": 0,
   "results": [
     {
       "source": "participant_oi",
-      "status": "FAILED",
-      "records": null,
-      "requested_date": "2026-11-27",
-      "error": "404 Client Error: Not Found for url: https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_27112026.csv"
+      "status": "SAVED",
+      "records": 4,
+      "actual_date": "2026-11-27",
+      "sha256": "890d831c9b56f74007f385353308517ea1bfd8a768971508eefabaf6a3977409",
+      "error": "",
+      "validation_status": [
+        "VERIFIED_WITH_WARNING"
+      ],
+      "eligible_for_analysis": true,
+      "validation_warnings": "[{\"type\": \"COLUMN_TOTAL\", \"field\": \"Index Call Long\", \"calculated\": 6290509, \"official\": 6290510, \"difference\": -1}, {\"type\": \"COLUMN_TOTAL\", \"field\": \"Index Call Short\", \"calculated\": 6290509, \"official\": 6290510, \"difference\": -1}, {\"type\": \"COLUMN_TOTAL\", \"field\": \"Index Put Long\", \"calculated\": 4744214, \"official\": 4744213, \"difference\": 1}, {\"type\": \"COLUMN_TOTAL\", \"field\": \"Index Put Short\", \"calculated\": 4744214, \"official\": 4744213, \"difference\": 1}]"
     },
     {
       "source": "participant_oi",
@@ -73,12 +78,16 @@
     },
     {
       "source": "fii_dii_unverified",
-      "status": "FAILED",
-      "records": null,
-      "requested_date": "2026-11-27",
-      "error": "NSE cash API unavailable: https://www.nseindia.com/api/fiidiiTradeReact: Stale cash report: [datetime.date(2026, 11, 26), datetime.date(2026, 11, 26)]; expected=2026-11-27 | https://www.nseindia.in/api/fiidiiTradeReact: Stale cash report: [datetime.date(2026, 11, 26), datetime.date(2026, 11, 26)]; expected=2026-11-27",
-      "scope_verified": false,
+      "status": "SAVED",
+      "records": 2,
+      "actual_date": "2026-11-27",
+      "sha256": "a203f6b159797fae58013ca23b819c5f34771f6ef8438e879afe6decf386fe5d",
+      "error": "",
+      "validation_status": [
+        "SCOPE_UNVERIFIED"
+      ],
       "eligible_for_analysis": false,
+      "scope_verified": false,
       "optional_source": true
     }
   ]

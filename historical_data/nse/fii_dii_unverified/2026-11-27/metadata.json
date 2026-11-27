@@ -1,0 +1,10 @@
+{
+  "source": "fii_dii_unverified",
+  "report_date": "2026-11-27",
+  "origin": "https://www.nseindia.com/api/fiidiiTradeReact",
+  "engine_version": "1.5",
+  "version": "1.3",
+  "sha256": "a203f6b159797fae58013ca23b819c5f34771f6ef8438e879afe6decf386fe5d",
+  "records": 2,
+  "saved_at": "2026-11-27T20:58:53.248781+05:30"
+}

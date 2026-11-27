@@ -1,0 +1,56 @@
+{
+  "version": "1.5.4",
+  "source": "https://www.nseindia.com/api/fiidiiTradeReact",
+  "date": "2026-11-27",
+  "status": "SCOPE_UNVERIFIED",
+  "eligible_for_analysis": false,
+  "matching_hosts": 2,
+  "raw_payload": [
+    {
+      "buyValue": "17263.65",
+      "category": "DII",
+      "date": "27-Nov-2026",
+      "netValue": "-556.42",
+      "sellValue": "17820.07"
+    },
+    {
+      "buyValue": "14259.45",
+      "category": "FII/FPI",
+      "date": "27-Nov-2026",
+      "netValue": "1634.33",
+      "sellValue": "12625.12"
+    }
+  ],
+  "records": [
+    {
+      "Report Date": "2026-11-27",
+      "Category": "DII",
+      "Buy Cr": 17263.65,
+      "Sell Cr": 17820.07,
+      "Net Cr": -556.42,
+      "Market Scope": "UNVERIFIED_EXCHANGE_SCOPE",
+      "Numeric Validation": true,
+      "Date Validation": true,
+      "Scope Verified": false,
+      "Validation Status": "SCOPE_UNVERIFIED",
+      "Eligible For Analysis": false,
+      "Source URL": "https://www.nseindia.com/api/fiidiiTradeReact",
+      "Matching API Hosts": 2
+    },
+    {
+      "Report Date": "2026-11-27",
+      "Category": "FII/FPI",
+      "Buy Cr": 14259.45,
+      "Sell Cr": 12625.12,
+      "Net Cr": 1634.33,
+      "Market Scope": "UNVERIFIED_EXCHANGE_SCOPE",
+      "Numeric Validation": true,
+      "Date Validation": true,
+      "Scope Verified": false,
+      "Validation Status": "SCOPE_UNVERIFIED",
+      "Eligible For Analysis": false,
+      "Source URL": "https://www.nseindia.com/api/fiidiiTradeReact",
+      "Matching API Hosts": 2
+    }
+  ]
+}
