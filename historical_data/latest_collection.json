@@ -1,11 +1,11 @@
 {
   "version": "1.3",
-  "started": "2026-11-26T23:45:11.963440+05:30",
-  "finished": "2026-11-26T23:45:14.527310+05:30",
-  "collection_date": "2026-11-26",
-  "saved": 0,
-  "unchanged": 6,
-  "failed_attempts": 1,
+  "started": "2026-11-27T09:04:19.241548+05:30",
+  "finished": "2026-11-27T09:04:22.065063+05:30",
+  "collection_date": "2026-11-27",
+  "saved": 1,
+  "unchanged": 4,
+  "failed_attempts": 2,
   "successful_sources": [
     "block",
     "bulk",
@@ -16,9 +16,9 @@
   "results": [
     {
       "source": "universe",
-      "status": "UNCHANGED",
+      "status": "SAVED",
       "records": 218,
-      "actual_date": "2026-11-26",
+      "actual_date": "2026-11-27",
       "sha256": "91b466e0fae971ab7f286f0175c0ccfcb3cbc0b8506088d8b3af2642402704b7",
       "error": ""
     },
@@ -27,9 +27,9 @@
       "status": "UNCHANGED",
       "records": 117,
       "fo_matched_current_universe": 0,
-      "requested_date": "2026-11-26",
+      "requested_date": "2026-11-27",
       "actual_date": "2026-11-26",
-      "date_match": true,
+      "date_match": false,
       "sha256": "533d7c53ff1d1d5e5f84358ddf313948775128f1b9ad8f674506923aca924a39",
       "error": ""
     },
@@ -38,11 +38,19 @@
       "status": "UNCHANGED",
       "records": 99,
       "fo_matched_current_universe": 5,
-      "requested_date": "2026-11-26",
+      "requested_date": "2026-11-27",
       "actual_date": "2026-11-26",
-      "date_match": true,
+      "date_match": false,
       "sha256": "3bfe223f3b5a90e17f0c331189cd11d2b33b2f203c6f42fda375da0f680a33c3",
       "error": ""
+    },
+    {
+      "source": "short",
+      "status": "FAILED",
+      "records": null,
+      "requested_date": "2026-11-27",
+      "actual_date": null,
+      "error": "HTTP 404"
     },
     {
       "source": "short",
@@ -73,17 +81,6 @@
       "requested_date": "2026-11-24",
       "actual_date": null,
       "error": "HTTP 404"
-    },
-    {
-      "source": "short",
-      "status": "UNCHANGED",
-      "records": 93,
-      "fo_matched_current_universe": 74,
-      "requested_date": "2026-11-23",
-      "actual_date": "2026-11-20",
-      "date_match": false,
-      "sha256": "dd7d1db440338d743d71dfbf4946d47492dff9a6b04f4682e2db203e3521d648",
-      "error": ""
     }
   ]
 }
