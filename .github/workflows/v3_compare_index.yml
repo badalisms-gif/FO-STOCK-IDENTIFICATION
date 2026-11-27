@@ -1,0 +1,43 @@
+name: V3 Actual Index Context Backtest
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_compare_index.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install numpy pandas scikit-learn
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-historical-research
+          run-id: 45949029505
+          github-token: ${{ github.token }}
+          path: research_output
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-expired-oi-full
+          run-id: 45986844144
+          github-token: ${{ github.token }}
+          path: oi
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-context-archive
+          run-id: 45965051078
+          github-token: ${{ github.token }}
+          path: context
+      - run: python -m research_v3.compare_index
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-index-comparison
+          path: index_comparison.json
