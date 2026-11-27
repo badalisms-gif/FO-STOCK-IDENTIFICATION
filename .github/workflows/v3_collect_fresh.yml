@@ -10,6 +10,7 @@ jobs:
   collect:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    # Retry with same-day intraday fallback and diagnostic counts
     env:
       UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
       VALIDATION_DATE: '2026-11-27'
