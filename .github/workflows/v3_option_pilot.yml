@@ -1,0 +1,33 @@
+name: V3 Historical Option Premium Pilot
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_option_pilot.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-historical-research
+          run-id: 45949029505
+          github-token: ${{ github.token }}
+          path: research_output
+      - run: python -m research_v3.option_pilot
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-option-pilot
+          path: option_pilot
