@@ -1,0 +1,94 @@
+{
+  "version": "1.5",
+  "collection_time": "2026-11-27T20:59:28.834804+05:30",
+  "successful_sources": [
+    "futures"
+  ],
+  "missing_sources": [
+    "fii_dii",
+    "participant_oi"
+  ],
+  "results": [
+    {
+      "source": "futures",
+      "status": "SAVED",
+      "records": 651,
+      "actual_date": "2026-11-27",
+      "sha256": "4b8070cd246f93f7043fcc4ddf9ddc17ca5b6e60f169cd154f14f0198de4e414",
+      "error": ""
+    },
+    {
+      "source": "participant_oi",
+      "status": "FAILED",
+      "records": null,
+      "requested_date": "2026-11-27",
+      "error": "Participant report date unverified"
+    },
+    {
+      "source": "futures",
+      "status": "UNCHANGED",
+      "records": 651,
+      "actual_date": "2026-11-26",
+      "sha256": "191a865649113d777512f4c4da6cec7f5d3e006ea7ae1a733219cdbc293074f9",
+      "error": ""
+    },
+    {
+      "source": "participant_oi",
+      "status": "FAILED",
+      "records": null,
+      "requested_date": "2026-11-26",
+      "error": "Participant report date unverified"
+    },
+    {
+      "source": "futures",
+      "status": "UNCHANGED",
+      "records": 651,
+      "actual_date": "2026-11-25",
+      "sha256": "b2d0868517f066e899264db97abd59f163b16dc632ce1d7d5b4a4ccf9113d3be",
+      "error": ""
+    },
+    {
+      "source": "participant_oi",
+      "status": "FAILED",
+      "records": null,
+      "requested_date": "2026-11-25",
+      "error": "Participant report date unverified"
+    },
+    {
+      "source": "futures",
+      "status": "FAILED",
+      "records": null,
+      "requested_date": "2026-11-24",
+      "error": "404 Client Error: Not Found for url: https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_20261124_F_0000.csv.zip"
+    },
+    {
+      "source": "participant_oi",
+      "status": "FAILED",
+      "records": null,
+      "requested_date": "2026-11-24",
+      "error": "404 Client Error: Not Found for url: https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_24112026.csv"
+    },
+    {
+      "source": "futures",
+      "status": "UNCHANGED",
+      "records": 649,
+      "actual_date": "2026-11-23",
+      "sha256": "e5415a1614db014ca5856c6105361c88fb981795faaaea0ff2bc26e9aa8a3fc7",
+      "error": ""
+    },
+    {
+      "source": "participant_oi",
+      "status": "FAILED",
+      "records": null,
+      "requested_date": "2026-11-23",
+      "error": "Participant report date unverified"
+    },
+    {
+      "source": "fii_dii",
+      "status": "FAILED",
+      "records": null,
+      "requested_date": "2026-11-27",
+      "error": "403 Client Error: Forbidden for url: https://www.nseindia.com/"
+    }
+  ]
+}
