@@ -1,0 +1,43 @@
+name: V3 Cloud Write Test
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_cloud_write_test.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests==2.32.5
+      - run: |
+          python - <<'PY'
+          from research_v3.forward_cloud_ledger import CloudLedger
+          import os
+          c=CloudLedger()
+          day='1900-01-01'
+          sid='TEST-'+os.environ['GITHUB_RUN_ID']
+          row=dict(session_date=day,signal_id=sid,strategy='CE STRICT + CE A',symbol='TEST',instrument_key='TEST',first_qualified_at='1900-01-01T09:45:00+05:30',original_score=.7,trade_status='ACTIVE',entry=25,stop_loss=23,target=32.5)
+          try:
+              c.register(row)
+              c.register(row)
+              assert len(c.raw(day,sid))==2
+              c.update(day,sid,{'current_premium':28,'filter_status':'FILTER LOST'})
+              assert all(r['current_state']['current_premium']==28 for r in c.raw(day,sid))
+              c.update(day,sid,{'trade_status':'TARGET HIT','exit_price':32.5,'gross_pnl':750})
+              c.update(day,sid,{'trade_status':'ACTIVE','exit_price':99})
+              assert all(r['trade_status']=='TARGET HIT' and r['current_state']['exit_price']==32.5 and r['original']['entry']==25 for r in c.raw(day,sid))
+              print('CLOUD LIFECYCLE PASS')
+          finally:
+              c.call('DELETE','fo_signals',{'session_date':'eq.'+day,'signal_id':'eq.'+sid},prefer='return=minimal')
+              assert not c.raw(day,sid)
+              c.close()
+              print('TEST CLEANUP PASS')
+          PY
