@@ -59,5 +59,10 @@ def connect(token,buffer):
     stream.on("open",opened)
     stream.on("close",closed)
     stream.on("message",buffer.ingest)
+    def failed(*args):
+        buffer.connected=False
+        buffer.errors+=1
+    stream.on("error",failed)
+    stream.auto_reconnect(True,5,10)
     stream.connect()
     return stream
