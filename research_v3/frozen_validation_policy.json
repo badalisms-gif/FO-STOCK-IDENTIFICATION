@@ -1,0 +1,26 @@
+{
+  "status": "research_only",
+  "ce": {
+    "minimum_premium": 5,
+    "stop_loss_pct": 8,
+    "target_pct": 30,
+    "last_entry_ist": "14:30",
+    "holding_minutes": 15,
+    "exclude_expiry_day": true,
+    "source_run": 46012425606
+  },
+  "pe": {
+    "enabled": false,
+    "reason": "Negative adjusted historical expectancy",
+    "source_run": 46012425606
+  },
+  "validation": {
+    "start_after": "2026-11-26",
+    "minimum_distinct_sessions": 20,
+    "minimum_valid_trades": 30,
+    "require_positive_adjusted_expectancy": true,
+    "require_liquidity": true,
+    "allow_live_orders": false,
+    "notes": "Proposed acceptance gates, not validated. Freeze CE model and thresholds trained on historical data; no retuning on holdout. Record all signals, exclusions, costs and session-clustered results."
+  }
+}
