@@ -653,7 +653,8 @@ def priority_history(frame=None, report=None):
                 if category in ("PRIORITY BULLISH","PRIORITY BEARISH"):
                     db.execute("INSERT INTO priority VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(day,symbol,direction) DO UPDATE SET last_at=excluded.last_at,last_price=excluded.last_price,current_category=excluded.current_category",(day,symbol,category,observed,observed,price,price,category))
         day=db.execute("SELECT MAX(day) FROM priority_session").fetchone()[0]
-        return day,pd.read_sql_query("SELECT symbol AS Symbol,direction AS Priority,first_at AS 'First Seen',last_at AS 'Last Qualified',first_price AS 'First LTP',last_price AS 'Last Observed LTP',current_category AS 'Last Observed Category' FROM priority WHERE day=? ORDER BY first_at",(day,),con=db)
+        cursor = db.execute("SELECT symbol AS Symbol,direction AS Priority,first_at AS 'First Seen',last_at AS 'Last Qualified',first_price AS 'First LTP',last_price AS 'Last Observed LTP',current_category AS 'Last Observed Category' FROM priority WHERE day=? ORDER BY first_at",(day,))
+        return day,pd.DataFrame(cursor.fetchall(), columns=[col[0] for col in cursor.description])
 
 
 def show_priority_history():
