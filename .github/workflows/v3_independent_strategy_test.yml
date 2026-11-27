@@ -1,0 +1,43 @@
+name: V3 Independent Strategy Test
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_independent_strategy_test.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests==2.32.5
+      - run: python -m compileall -q research_v3
+      - run: |
+          python - <<'PY'
+          import os
+          from research_v3.forward_cloud_ledger import CloudLedger
+          c=CloudLedger()
+          day='1900-01-01'
+          prefix='TEST-'+os.environ['GITHUB_RUN_ID']
+          ids=[prefix+'-A',prefix+'-STRICT']
+          try:
+              for sid,strategy in zip(ids,['CE A','CE STRICT']):
+                  c.register(dict(session_date=day,signal_id=sid,strategy=strategy,symbol='TEST',instrument_key='TEST',first_qualified_at='1900-01-01T09:45:00+05:30',original_score=.7,trade_status='ACTIVE',entry=25,stop_loss=23,target=32.5))
+              c.update(day,ids[0],{'trade_status':'SL HIT','exit_price':23,'gross_pnl':-200})
+              assert c.raw(day,ids[1])[0]['trade_status']=='ACTIVE'
+              c.update(day,ids[1],{'trade_status':'TARGET HIT','exit_price':32.5,'gross_pnl':750})
+              assert c.raw(day,ids[0])[0]['current_state']['gross_pnl']==-200
+              assert c.raw(day,ids[1])[0]['current_state']['gross_pnl']==750
+              print('INDEPENDENT STRATEGIES PASS')
+          finally:
+              for sid in ids:
+                  c.call('DELETE','fo_signals',{'session_date':'eq.'+day,'signal_id':'eq.'+sid},prefer='return=minimal')
+                  assert not c.raw(day,sid)
+              c.close()
+          PY
