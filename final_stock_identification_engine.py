@@ -634,7 +634,9 @@ def show_morning():
 def priority_history(frame=None, report=None):
     """Retain observed priority classifications on this app instance."""
     import sqlite3
-    with sqlite3.connect("v28_priority_history.sqlite3", timeout=10) as db:
+    import tempfile
+    db_path = Path(tempfile.gettempdir()) / "v28_priority_history.sqlite3"
+    with sqlite3.connect(str(db_path), timeout=10) as db:
         db.execute("CREATE TABLE IF NOT EXISTS priority (day TEXT, symbol TEXT, direction TEXT, first_at TEXT, last_at TEXT, first_price REAL, last_price REAL, current_category TEXT, PRIMARY KEY(day,symbol,direction))")
         db.execute("CREATE TABLE IF NOT EXISTS priority_session (day TEXT PRIMARY KEY)")
         if frame is not None and report.get("Status") == "LIVE RESEARCH AVAILABLE" and not frame.empty:
@@ -664,8 +666,8 @@ def show_priority_history():
         else:
             st.dataframe(history,hide_index=True,use_container_width=True)
             st.bar_chart(history.groupby("Priority")["Symbol"].nunique())
-    except Exception:
-        st.warning("Priority history storage unavailable.")
+    except Exception as error:
+        st.warning("Priority history storage unavailable: " + type(error).__name__)
 
 
 def show_live(token):
