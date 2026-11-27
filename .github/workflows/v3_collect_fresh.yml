@@ -1,0 +1,27 @@
+name: V3 Fresh Holdout Collection
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_collect_fresh.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+      VALIDATION_DATE: '2026-11-27'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python -m research_v3.collect_fresh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-fresh-2026-11-27
+          path: fresh_data/
