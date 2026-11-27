@@ -5,29 +5,36 @@ import streamlit as st
 import pandas as pd
 
 def render(path="forward_signals.json", ledger_path="forward_ledger.sqlite3"):
-    from research_v3.forward_signal_ledger import Ledger
     from datetime import datetime
     from zoneinfo import ZoneInfo
-    if Path(ledger_path).exists():
-        ledger=Ledger(ledger_path)
-        try:
-            today=datetime.now(ZoneInfo("Asia/Kolkata")).date().isoformat()
-            day=st.date_input("Trading session",value=datetime.fromisoformat(today).date()).isoformat()
-            ledger.export(day,path,scan_complete=False)
-        finally:
-            ledger.close()
+    import os,sqlite3
     st.header("Qualified F&O Signals — Research Preview")
     st.warning("Paper research only. No real orders. Model score is not profit probability.")
-    p=Path(path)
-    if not p.exists():
-        st.info("DATA UNAVAILABLE — forward signal feed is not connected.")
-        return
+    day=st.date_input("Trading session",value=datetime.now(ZoneInfo("Asia/Kolkata")).date()).isoformat()
     try:
-        payload=json.loads(p.read_text())
-        rows=payload["signals"]
-        assert isinstance(rows,list)
-    except (ValueError,KeyError,TypeError,AssertionError,OSError):
-        st.error("Invalid signal feed; no actionable levels displayed.")
+        if os.environ.get("SUPABASE_SERVICE_ROLE_KEY"):
+            from research_v3.forward_cloud_ledger import CloudLedger
+            ledger=CloudLedger()
+            try:
+                rows=ledger.rows(day)
+                status=ledger.call("GET","fo_scan_status",{"session_date":"eq."+day})
+                payload={"signals":rows,"as_of":status[0]["observed_at"] if status else None,"scan_complete":status[0]["scan_complete"] if status else False}
+            finally:
+                ledger.close()
+        elif Path(ledger_path).exists():
+            with sqlite3.connect(Path(ledger_path).resolve().as_uri()+"?mode=ro",uri=True) as db:
+                rows=[json.loads(r[0]) for r in db.execute("SELECT payload FROM signals WHERE day=? ORDER BY id",(day,))]
+            payload={"signals":rows,"scan_complete":False}
+        elif Path(path).exists():
+            payload=json.loads(Path(path).read_text())
+            if payload.get("session_date")!=day: raise ValueError("wrong session")
+            rows=payload["signals"]
+        else:
+            st.info("DATA UNAVAILABLE — forward signal feed is not connected.")
+            return
+        if not isinstance(rows,list):raise ValueError("invalid rows")
+    except Exception:
+        st.error("Signal feed unavailable; no actionable levels displayed.")
         return
     st.caption("Feed timestamp: "+str(payload.get("as_of","Unavailable")))
     if not rows:
