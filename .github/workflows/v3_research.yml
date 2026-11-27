@@ -1,0 +1,36 @@
+name: V3 Historical Research
+on:
+  workflow_dispatch:
+  push:
+    branches: [v3-historical-research]
+    paths:
+      - '.github/workflows/v3_research.yml'
+permissions:
+  contents: read
+concurrency:
+  group: v3-historical-research
+  cancel-in-progress: false
+jobs:
+  collect:
+    if: github.ref == 'refs/heads/v3-historical-research'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python -m compileall -q research_v3
+      - name: Collect historical data
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+        run: python -m research_v3.collect
+      - name: Upload research archive and coverage manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v3-historical-research
+          path: research_output/
+          retention-days: 30
+          if-no-files-found: warn
