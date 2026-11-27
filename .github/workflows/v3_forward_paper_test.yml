@@ -2,7 +2,7 @@ name: V3 Forward Paper Tests
 on:
   push:
     branches: [v3-historical-research]
-    paths: ['.github/workflows/v3_forward_paper_test.yml','research_v3/forward_*.py','research_v3/test_forward_paper.py']
+    paths: ['.github/workflows/v3_forward_paper_test.yml','research_v3/forward_*.py','research_v3/test_forward_*.py']
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,5 +14,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m unittest research_v3.test_forward_paper research_v3.test_forward_ledger -v
+      - run: python -m unittest research_v3.test_forward_paper research_v3.test_forward_ledger research_v3.test_forward_oi -v
       - run: python -m compileall -q research_v3
