@@ -16,18 +16,20 @@ def select_atm(token,key,spot,day,side="CE"):
     return min((c for c in contracts if c["expiry"]==expiry),key=lambda c:(abs(float(c["strike_price"])-spot),float(c["strike_price"])))
 
 def register_candidate(ledger,token,candidate):
+    strategy=candidate["strategy"]
+    if strategy not in ("CE STRICT","CE A"): raise ValueError("invalid strategy")
     t=candidate["signal_time"].astimezone(ZoneInfo("Asia/Kolkata"))
     score=float(candidate["score"])
-    if not math.isfinite(score) or score<.60: return "below threshold"
+    if not math.isfinite(score) or score<(.6513329335878008 if strategy=="CE STRICT" else .60): return "below threshold"
     if not candidate.get("technical_gate"): return "technical gate failed"
     c=select_atm(token,candidate["underlying_key"],float(candidate["spot_price"]),t.date())
     key=c["instrument_key"]; lot=int(c["lot_size"])
-    sid=f'{key}:{t.isoformat()}'
+    sid=f'{key}:{t.isoformat()}:{strategy}'
     if any(r["signal_id"]==sid for r in ledger.rows(t.date().isoformat())): return "already registered"
     observed,quotes,_=read_depth(token,[key])
     q=quotes.get(key)
     position,error=enter(t,observed,q,date.fromisoformat(c["expiry"]),lot) if q else (None,"missing fresh depth")
-    row={"session_date":t.date().isoformat(),"signal_id":sid,"symbol":candidate["symbol"],"side":"CE","strategy":"CE STRICT + CE A" if score>=.6513329335878008 else "CE A","first_qualified_at":t.isoformat(),"signal_time_ist":t.isoformat(),"original_score":score,"current_score":score,"spot_price":candidate["spot_price"],"instrument_key":key,"strike":float(c["strike_price"]),"expiry":c["expiry"],"lot_size":lot,"filter_status":"NEW SIGNAL","trade_status":"ACTIVE" if position else "REJECTED","rejection_reason":error}
+    row={"session_date":t.date().isoformat(),"signal_id":sid,"symbol":candidate["symbol"],"side":"CE","strategy":strategy,"first_qualified_at":t.isoformat(),"signal_time_ist":t.isoformat(),"original_score":score,"current_score":score,"spot_price":candidate["spot_price"],"instrument_key":key,"strike":float(c["strike_price"]),"expiry":c["expiry"],"lot_size":lot,"filter_status":"NEW SIGNAL","trade_status":"ACTIVE" if position else "REJECTED","rejection_reason":error}
     if q: row.update(bid=q.bid,ask=q.ask,spread_pct=100*(q.ask-q.bid)/((q.ask+q.bid)/2),quote_timestamp=q.timestamp.isoformat(),bid_size=q.bid_size,ask_size=q.ask_size)
     if position:
         e=position["entry"];sl=position["stop"];tp=position["target"]
