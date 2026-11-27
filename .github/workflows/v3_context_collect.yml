@@ -1,0 +1,33 @@
+name: V3 Context Collection
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_context_collect.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-historical-research
+          run-id: 45949029505
+          github-token: ${{ github.token }}
+          path: research_output
+      - run: python -m research_v3.collect_context
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-context-archive
+          path: research_output/context/
+          retention-days: 30
