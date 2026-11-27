@@ -1,0 +1,38 @@
+name: V3 Historical Threshold Premium Replay
+on:
+  push:
+    branches: [v3-historical-research]
+    paths: ['.github/workflows/v3_replay_historical_thresholds.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-historical-research
+          run-id: 45949029505
+          github-token: ${{ github.token }}
+          path: research_output
+      - uses: actions/download-artifact@v4
+        with:
+          name: v3-historical-ce-thresholds
+          run-id: 46035788375
+          github-token: ${{ github.token }}
+      - run: python -m research_v3.replay_historical_thresholds
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-historical-threshold-premium
+          path: premium_grid
