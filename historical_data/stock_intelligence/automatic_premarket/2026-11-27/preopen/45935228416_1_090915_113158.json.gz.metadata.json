@@ -1,0 +1,23 @@
+{
+  "Version": "2.7.0",
+  "Collection Date": "2026-11-27",
+  "Collection Mode": "PREOPEN",
+  "Historical Report Date": "2026-11-26",
+  "Generated At": "2026-11-27T09:09:15.102857+05:30",
+  "Records": 218,
+  "SHA256": "322b19e36ec3d3ebb37a47f7350c3795f46834d8c9723137d47ac28b480f37f3",
+  "Archive": "45935228416_1_090915_113158.json.gz",
+  "Preopen Coverage %": 100.0,
+  "Historical Verification": {
+    "Historical Date": "2026-11-26",
+    "Historical Universe": 218,
+    "Verified Matched Stocks": 218,
+    "Historical Coverage %": 100.0,
+    "Archive Integrity Verified": true,
+    "Historical Coverage Sufficient": true,
+    "Latest NSE Session Independently Verified": false,
+    "Previous Session Manually Verified": false,
+    "History Status": "ONE HISTORICAL SNAPSHOT"
+  },
+  "Trade Signal": "NOT GENERATED"
+}
